@@ -34,8 +34,6 @@ function Init(){
   //Add event to the change options button.
   document.getElementById("changeOptions").addEventListener("click", function(){
     manager.changeToolOptions(document.getElementById('optionsText').value);
-    var binary = circuit.toBin();
-    circuit.binToObject(binary);
   });
 
   //Add event to the input mode button.
@@ -52,6 +50,20 @@ function Init(){
   document.getElementById("deleteModeButton").addEventListener("click", function(){
     manager.changeTool('delete');
   });
+
+  //Add event to the download button.
+  document.getElementById('downloadFileButton').addEventListener("click", function(){
+    manager.downloadCircuit();
+  })
+
+  //Add event to the load button.
+  document.getElementById('loadFileButton').addEventListener("click", function(){
+    document.getElementById('loadFile').click();
+  })
+
+  //Add event to the file loader.
+  document.getElementById('loadFile').addEventListener('change', manager.loadCircuit);
+
 
 
   //Draw background.
@@ -73,7 +85,6 @@ function Init(){
   }
 }
 
-var count = 0;
 Loop();
 //Loop method.
 /*This method executes every once in a while repeating itself many times until termination*/
@@ -82,10 +93,6 @@ function Loop(){
 
   //Tell the manager to execute its loop.
   manager.loop();
-  if(circuit.chips.length == 1 && count == 0){
-    console.log(circuit.toBin());
-    count++;
-  }
 
   //Reset keyboard events values.
   for(var i = 0; i < keyboard.keyDown.length-1; i++){

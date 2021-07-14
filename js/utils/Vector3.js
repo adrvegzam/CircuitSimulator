@@ -4,9 +4,9 @@ var Vec3 = new Vector3();
 ////VECTOR3 OBJECT DECLARATION.
 function Vector3(x, y, z){
   ////VECTOR3 DIRECT PROPERTIES.
-  this.x = x; //Vector x coordinate
-  this.y = y; //Vector y coordinate.
-  this.z = z; //Vector z coordinate.
+  this.x = x==undefined?0:x; //Vector x coordinate
+  this.y = y==undefined?0:y; //Vector y coordinate.
+  this.z = z==undefined?0:z; //Vector z coordinate.
 
   ////VECTOR3 INDIRECT PROPERTIES.
   //Return the modulo of the current vector.

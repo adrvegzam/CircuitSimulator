@@ -1,6 +1,8 @@
+import { Wire } from "./Wire.js";
+
 import { pinParams } from "../parameters/pinParams.js";
 
-import { binaryFixedSize } from "../../utils/Utiles.js";
+import { binaryFixedSize, getBitsFromBinary, stringFromBinary } from "../../utils/Utiles.js";
 
 ////OBJECT DECLARATION.
 /*This object is used as an intermediary between the inputs and outputs of a chip
@@ -67,11 +69,13 @@ function Pin(position, width, options, tag, tagPosition, type){
   //Parse to bin method for the pin.
   /*This method is used to encode the pin in binary.*/
   this.toBin = function(wires){
+    console.log(this.connection.value)
     return binaryFixedSize(this.type=="in"?1:0, 1) +
            binaryFixedSize(this.options, 1) + 
+           binaryFixedSize(this.connection instanceof Wire?1:0, 1) + 
            binaryFixedSize(this.width, 6) +
-           binaryFixedSize(this.type=="in"?wires.indexOf(this.connection):this.connection.value,
-                           this.type=="in"?12:this.width) + 
+           binaryFixedSize(this.connection instanceof Wire?wires.indexOf(this.connection):this.connection.value,
+                           this.connection instanceof Wire?12:this.width) + 
            (this.options != 1? "":(
              binaryFixedSize(this.position.x, 6) + 
              binaryFixedSize(this.position.y, 6) + 
@@ -80,6 +84,40 @@ function Pin(position, width, options, tag, tagPosition, type){
              binaryFixedSize(this.tagPosition.x, 3) + 
              binaryFixedSize(this.tagPosition.y, 3)
            ));
+  }
+
+  //Parse bin to object method for the pin.
+  /*This method is used to decode the pin from binary.*/
+  this.binToObject = function(binary, pointer){
+    //Parse to binary some properties.
+    var type = parseInt(getBitsFromBinary(binary, pointer, 1), 2)?"in":"out";
+    var options = parseInt(getBitsFromBinary(binary, pointer, 1), 2);
+    var connected = parseInt(getBitsFromBinary(binary, pointer, 1), 2);
+    var width = parseInt(getBitsFromBinary(binary, pointer, 6), 2);
+    var connection = connected?parseInt(getBitsFromBinary(binary, pointer, 12), 2):
+                               {value: parseInt(getBitsFromBinary(binary, pointer, width), 2)};
+    
+    //Define some properties neccesary in case it has options.
+    var position;
+    var tagLength;
+    var tag;
+    var tagPosition;
+
+    //If it has options, parse into binary option dependant properties.
+    if(options){
+      position = new Vector3(parseInt(getBitsFromBinary(binary, pointer, 6), 2),
+                             parseInt(getBitsFromBinary(binary, pointer, 6), 2));
+      tagLength = parseInt(getBitsFromBinary(binary, pointer, 5), 2);
+      tag = stringFromBinary(getBitsFromBinary(binary, pointer, tagLength*8), 2);
+      tagPosition = new Vector3(parseInt(getBitsFromBinary(binary, pointer, 3), 2),
+                                parseInt(getBitsFromBinary(binary, pointer, 3), 2));
+    }
+
+    //Create the pin and return it.
+    var pin = new Pin(position, width, options, tag, tagPosition, type);
+    pin.connection = connection;
+
+    return pin;
   }
 }
 

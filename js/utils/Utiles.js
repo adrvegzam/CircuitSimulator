@@ -43,10 +43,18 @@ function binaryFromString(stringToBinary){
   return binary;
 }
 
+function stringFromBinary(binaryToString){
+  var text = "";
+  for(var i = 0; i < binaryToString.length/8; i++){
+    text += String.fromCharCode(parseInt(binaryToString.substr(i*8, 8), 2));
+  }
+  return text;
+}
+
 function getBitsFromBinary(binary, pointer, numberOfBitsToGet){
   var subBinary = binary.substr(pointer.value, numberOfBitsToGet);
   pointer.value += numberOfBitsToGet;
   return subBinary;
 }
 
-export {gridFixed, distanceToSegment, smoothContour, binaryFixedSize, binaryFromString, getBitsFromBinary}
+export {gridFixed, distanceToSegment, smoothContour, binaryFixedSize, binaryFromString, getBitsFromBinary, stringFromBinary}

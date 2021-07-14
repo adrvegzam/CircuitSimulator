@@ -121,10 +121,12 @@ function Wire(positions, width){
   //Parse bin to object method for the circuit.
   /*This method is used to decode the circuit from binary.*/
   this.binToObject = function(binary, pointer){
+    //Parse to binary some properties.
     var width = parseInt(getBitsFromBinary(binary, pointer, 6), 2);
     var positions = [];
     var connections = [];
     
+    //Parse to binary the positions of the wire. 
     var positionsLength = parseInt(getBitsFromBinary(binary, pointer, 8), 2);
     for(var i = 0; i < positionsLength; i++){
       var positionLength = parseInt(getBitsFromBinary(binary, pointer, 8), 2);
@@ -136,11 +138,13 @@ function Wire(positions, width){
       positions.push(position);
     }
     
+    //Parse to binary the connections of the wire.
     var connectionsLength = parseInt(getBitsFromBinary(binary, pointer, 12), 2);
     for(var i = 0; i < connectionsLength; i++){
       connections.push(parseInt(getBitsFromBinary(binary, pointer, 12), 2));
     }
 
+    //Create the wire and return it.
     var wire = new Wire(positions, width);
     wire.connections = connections;
     

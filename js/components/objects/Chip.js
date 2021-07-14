@@ -1,7 +1,9 @@
 import { chipStructure } from "../chipStructure.js";
 import { chipDrawing } from "../chipDrawing.js";
 import { chipLogic } from "../chipLogic.js";
-import { binaryFixedSize, binaryFromString } from "../../utils/Utiles.js";
+
+import { binaryFixedSize, binaryFromString, getBitsFromBinary, stringFromBinary } from "../../utils/Utiles.js";
+import { Vector3 } from "../../utils/Vector3.js";
 
 ////OBJECT DECLARATION.
 /*This object is used as to process the data linked to its input and output
@@ -75,6 +77,37 @@ function Chip(position, inputs, outputs, name){
       binary += binaryFixedSize(pins.indexOf(this.outputs[i]), 12);
     }
     return binary;
+  }
+
+  //Parse bin to object method for the chip.
+  /*This method is used to decode the chip from binary.*/
+  this.binToObject = function(binary, pointer){
+    //Parse to binary some properties.
+    var nameLength = parseInt(getBitsFromBinary(binary, pointer, 5), 2);
+    var name = stringFromBinary(getBitsFromBinary(binary, pointer, nameLength*8));
+    var position = new Vector3(parseInt(getBitsFromBinary(binary, pointer, 12), 2),
+                               parseInt(getBitsFromBinary(binary, pointer, 12), 2));
+    
+    //Parse to binary the inputs.
+    var inputs = [];
+    var inputsLength = parseInt(getBitsFromBinary(binary, pointer, 4), 2);
+    for(var i = 0; i < inputsLength; i++){
+      inputs.push(parseInt(getBitsFromBinary(binary, pointer, 12), 2));
+    }
+
+    //Parse to binary the outputs.
+    var outputs = [];
+    var outputsLength = parseInt(getBitsFromBinary(binary, pointer, 4), 2);
+    for(var i = 0; i < outputsLength; i++){
+      outputs.push(parseInt(getBitsFromBinary(binary, pointer, 12), 2));
+    }
+
+    //Create the chip and return it.
+    var chip = new Chip(position, inputs.length, outputs.length, name);
+    chip.inputs = inputs;
+    chip.outputs = outputs;
+
+    return chip;
   }
 
   ////CONSTRUCTOR CODE.

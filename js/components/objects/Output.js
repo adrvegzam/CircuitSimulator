@@ -3,7 +3,7 @@ import { Pin } from "./Pin.js";
 import { outputParams } from "../parameters/outputParams.js";
 
 import { Vector3, Vec3 } from "../../utils/Vector3.js";
-import { smoothContour, binaryFixedSize, binaryFromString } from "../../utils/Utiles.js";
+import { smoothContour, binaryFixedSize, binaryFromString, getBitsFromBinary, stringFromBinary } from "../../utils/Utiles.js";
 
 ////OBJECT DECLARATION.
 /*This object is used to allow the user to make outputs to the circuit
@@ -27,7 +27,9 @@ function Output(position, width, tag){
                   [5 + this.width*10, 0.5],
                   [5, 0.5]];
 
-  this.contour = smoothContour(this.contour, this.position, outputParams.outputRadius, outputParams.outputBorderResolution);
+  if(this.position != undefined){
+    this.contour = smoothContour(this.contour, this.position, outputParams.outputRadius, outputParams.outputBorderResolution);
+  }
 
   //Variables for logic.
   this.input = new Pin(this.position, this.width, 0, undefined, undefined, "in");                 //Saves the state of the output.
@@ -93,6 +95,24 @@ function Output(position, width, tag){
             binaryFixedSize(pins.indexOf(this.input), 12) + 
             binaryFixedSize(this.tag.length, 5) + 
             binaryFromString(this.tag);
+  }
+
+  //Parse bin to object method for the output.
+  /*This method is used to decode the output from binary.*/
+  this.binToObject = function(binary, pointer){
+    //Parse to binary some properties.
+    var width = parseInt(getBitsFromBinary(binary, pointer, 6), 2);
+    var position = new Vector3(parseInt(getBitsFromBinary(binary, pointer, 12), 2),
+                               parseInt(getBitsFromBinary(binary, pointer, 12), 2));
+    var outputPin = parseInt(getBitsFromBinary(binary, pointer, 12), 2);
+    var tagLength = parseInt(getBitsFromBinary(binary, pointer, 5), 2);
+    var tag = stringFromBinary(getBitsFromBinary(binary, pointer, tagLength*8), 2);
+
+    //Create the output and return it.
+    var output = new Output(position, width, tag);
+    output.input = outputPin;
+
+    return output;
   }
 
 }

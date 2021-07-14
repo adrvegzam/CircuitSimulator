@@ -1,15 +1,16 @@
-import { eventHandler } from "../../Main.js";
+import { Chip } from "./Chip.js";
+import { Wire } from "./Wire.js";
+import { Output } from "./Output.js";
+import { Input } from "./Input.js";
+import { Circuit } from "./Circuit.js";
 
-import { mousePos, clickPos, mousePressed } from "../../utils/Events.js";
+import { eventHandler, circuit, manager } from "../../Main.js";
+
+import { mousePos, clickPos } from "../../utils/Events.js";
 import { keyboard } from "../../utils/Keyboard.js";
 import { Vec3, Vector3 } from "../../utils/Vector3.js";
 import { distanceToSegment, gridFixed } from "../../utils/Utiles.js";
 
-import { Chip } from "./Chip.js";
-import { Wire } from "./Wire.js";
-import { Pin } from "./Pin.js";
-import { Output } from "./Output.js";
-import { Input } from "./Input.js";
 
 ////OBJECT DECLARATION.
 /*This object is used as wrapper for all the circuits in a proyect, managind all the needs of
@@ -75,6 +76,16 @@ function Manager(circuit){
                               .sort((a, b) => a[1] - b[1])[0];
   }
 
+  //Method to get the closest output given a position.
+  /*This method takes as output a position and returns the closest output if exists*/
+  this.getClosestOutput = function(clickPos){
+    if(this.circuit.outputs.length == 0){return [undefined, undefined];}
+    return this.circuit.outputs.map((output) => [output, (Math.abs(output.position.y-clickPos.y) <= 5 && 
+                                                          Math.abs(output.position.x-clickPos.x+output.width*5+5) <= output.width*5)?
+                                                          1:Infinity])
+                              .sort((a, b) => a[1] - b[1])[0];
+  }
+
   //Method to get the closest wire given a position.
   /*This method takes as input a position and returns the closest wire if exists*/
   this.getClosestWire = function(clickPos, whitelist){
@@ -115,6 +126,43 @@ function Manager(circuit){
   this.changeToolOptions = function(newToolOptions){
     this.toolOptions = newToolOptions;
   } 
+
+  ////CIRCUIT SAVING AND LOADING
+  //Method to load a circuit from a binary.
+  /*This method will receive a binary and will load the circuit and replace the actual with it*/
+  this.loadCircuit = function(event){
+    var fileToLoad = event.target.files;    //Saves the file to be loaded.  
+    var fileReader = new FileReader();      //Saves the file reader.
+
+    fileReader.onload = function() {
+      var binaryData = this.result;         //Saves the content of the file.
+      var newCircuit = (new Circuit()).binToObject(binaryData);
+      newCircuit.canvasElement = manager.circuit.canvasElement;
+      newCircuit.canvasContext = manager.circuit.canvasContext;
+      manager.circuit = newCircuit;
+      circuit = newCircuit;
+    }
+
+    fileReader.readAsText(fileToLoad[0]);
+  }
+
+  //Method to download a circuit.
+  /*This method will download the circuit in a file*/
+  this.downloadCircuit = function(){
+    //Get the circuit parsed as binary.
+    var binaryData = this.circuit.toBin();
+    var fileToSave;                           //Saves the file object to download.
+    var dataToSave = [binaryData];            //saves the data that goes into the file
+
+    //Add the data and properties to the file.
+    var propertiesOfFile = {type: 'text/plain'}; 
+    try{ fileToSave = new File(dataToSave, "circuit.txt", propertiesOfFile); } 
+    catch(e){ fileToSave = new Blob(dataToSave, propertiesOfFile); }
+
+    //Create url to download the file.
+    var url = URL.createObjectURL(fileToSave);
+    document.getElementById('downloadFileButton').href = url;
+  }
 
   ////MAIN METHODS
   //Method in charge of the main loop of the manager, drawing and updating everything.
@@ -276,6 +324,7 @@ function Manager(circuit){
         //Get closest element and tell the circuit to delete it.
         var closestElements = [this.getClosestChip(clickPos),
                                this.getClosestInput(clickPos),
+                               this.getClosestOutput(clickPos),
                                this.getClosestWire(clickPos)];
         var closestElement = closestElements.filter(x => x[0])
                                             .sort((a, b) => a[1] - b[1])[0];

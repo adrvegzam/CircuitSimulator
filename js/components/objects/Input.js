@@ -3,7 +3,7 @@ import { Pin } from "./Pin.js";
 import { inputParams } from "../parameters/inputParams.js";
 
 import { Vector3, Vec3 } from "../../utils/Vector3.js";
-import { smoothContour, binaryFixedSize, binaryFromString } from "../../utils/Utiles.js";
+import { smoothContour, binaryFixedSize, binaryFromString, stringFromBinary, getBitsFromBinary } from "../../utils/Utiles.js";
 
 ////OBJECT DECLARATION.
 /*This object is used to allow the user to make inputs to the circuit
@@ -27,7 +27,9 @@ function Input(position, width, tag){
                   [-5, 0.5],
                   [-5 - this.width*10, 0.5]];
 
-  this.contour = smoothContour(this.contour, this.position, inputParams.inputRadius, inputParams.inputBorderResolution);
+  if(this.position != undefined){
+    this.contour = smoothContour(this.contour, this.position, inputParams.inputRadius, inputParams.inputBorderResolution);
+  }
 
   //Variables for logic.
   this.output = new Pin(this.position, this.width, 0, undefined, undefined, "out");                 //Saves the state of the input.
@@ -107,6 +109,24 @@ function Input(position, width, tag){
             binaryFixedSize(pins.indexOf(this.output), 12) +  
             binaryFixedSize(this.tag.length, 5) + 
             binaryFromString(this.tag);
+  }
+
+  //Parse bin to object method for the input.
+  /*This method is used to decode the input from binary.*/
+  this.binToObject = function(binary, pointer){
+    //Parse to binary some properties.
+    var width = parseInt(getBitsFromBinary(binary, pointer, 6), 2);
+    var position = new Vector3(parseInt(getBitsFromBinary(binary, pointer, 12), 2),
+                               parseInt(getBitsFromBinary(binary, pointer, 12), 2));
+    var inputPin = parseInt(getBitsFromBinary(binary, pointer, 12), 2);
+    var tagLength = parseInt(getBitsFromBinary(binary, pointer, 5), 2);
+    var tag = stringFromBinary(getBitsFromBinary(binary, pointer, tagLength*8), 2);
+
+    //Create the input and return it.
+    var input = new Input(position, width, tag);
+    input.output = inputPin;
+
+    return input;
   }
 
 }
