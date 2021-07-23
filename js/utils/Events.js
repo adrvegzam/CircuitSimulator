@@ -1,38 +1,76 @@
-import { circuit } from "../Main.js";
-import { Vector3 } from "./Vector3.js";
+import { appScreen, cameraPos, cameraZoom, circuit } from "../Main.js";
+import { gridFixed } from "./Utiles.js";
+import { Vec3, Vector3 } from "./Vector3.js";
 
-var mousePos = null;
-var clickPos = null;
-var mousePressed = false;
+////EXTERNAL VARIABLES
+var mousePos = null;        //Saves the current mouse position.
+var clickPos = null;        //Saves the click positions.
+var startClickPos = null;   //Saves the starting click position in a drag.
+var endClickPos = null;     //Saves the ending click positions in a drag.
+var mousePressed = false;   //Saves if the mouse is pressed or not.
 
+////OBJECT DECLARATION.
+/*This object is used to allow the app to save custom events in an event handler,
+where all the events are saved in an array and you change them or delete them more easily.
+
+@PARAMETERS
+
+none
+
+*/
 function EventHandler(){
-  this.mousemoveEvents = [];
-  this.mousedownEvents = [];
-  this.mouseupEvents = [];
-  this.dragEvents = [];
+  this.mousemoveEvents = [];      //Saves an array of mousemove events.
+  this.mousedownEvents = [];      //Saves an array of mousedown events.
+  this.mouseupEvents = [];        //Saves an array of mouseup events.
+  this.mousewheelEvents = [];     //Saves an array of mousewheel events.
 
   var selfEventHandler = this;
+  //Add the mousemove main event in charge of managing the rest of mousemove events.
   circuit.canvasElement.addEventListener("mousemove", function(event){
-    mousePos = new Vector3(event.pageX - this.offsetLeft, event.pageY - this.offsetTop, 0);
+    //get the mouse position and save needed variables for draging calculations.
+    mousePos = new Vector3((event.pageX - appScreen.offsetLeft - appScreen.offsetWidth/2) / cameraZoom + cameraPos.x,
+                           (event.pageY - appScreen.offsetTop - appScreen.offsetHeight/2) / cameraZoom + cameraPos.y, 0);
+    mousePos.mul(window.devicePixelRatio);
+    mousePos.add(new Vector3(appScreen.offsetWidth/(4*cameraZoom), appScreen.offsetHeight/(4*cameraZoom), 0));
+    startClickPos = endClickPos;
+    endClickPos = Vec3.subVector3(mousePos, cameraPos);
+    //Execute all the related events.
     for(var i = 0; i < selfEventHandler.mousemoveEvents.length; i++){
       selfEventHandler.mousemoveEvents[i](event);
     }
   });
   
+  //Add the mousedown main event in charge of managing the rest of mousedown events.
   circuit.canvasElement.addEventListener("mousedown", function(event){
-    clickPos = new Vector3(event.pageX - this.offsetLeft, event.pageY - this.offsetTop, 0);
+    //Get the click position and prepare for draging.
+    clickPos = new Vector3((event.pageX - appScreen.offsetLeft - appScreen.offsetWidth/2) / cameraZoom + cameraPos.x,
+                           (event.pageY - appScreen.offsetTop - appScreen.offsetHeight/2) / cameraZoom + cameraPos.y, 0);
+    clickPos.mul(window.devicePixelRatio);
+    clickPos.add(new Vector3(appScreen.offsetWidth/(4*cameraZoom), appScreen.offsetHeight/(4*cameraZoom), 0));
+    startClickPos = Vec3.subVector3(mousePos, cameraPos);
     mousePressed = true;
+    //Execute all the related events.
     for(var i = 0; i < selfEventHandler.mousedownEvents.length; i++){
       selfEventHandler.mousedownEvents[i](event);
     }
   });
   
+  //Add the mouseup main event in charge of managing the rest of mouseup events.
   circuit.canvasElement.addEventListener("mouseup", function(event){
     mousePressed = false;
+    //Execute all the related events.
     for(var i = 0; i < selfEventHandler.mouseupEvents.length; i++){
       selfEventHandler.mouseupEvents[i](event);
     }
   });
+
+  //Add the mouseupwheel main event in charge of managing the rest of mouseupwheel events.
+  circuit.canvasElement.addEventListener("wheel", function(event){
+    //Execute all the related events.
+    for(var i = 0; i < selfEventHandler.mousewheelEvents.length; i++){
+      selfEventHandler.mousewheelEvents[i](event);
+    }
+  });
 }
 
-export {EventHandler, mousePos, clickPos, mousePressed};
+export {EventHandler, mousePos, clickPos, mousePressed, startClickPos, endClickPos};

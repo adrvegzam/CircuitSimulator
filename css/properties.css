@@ -1,0 +1,80 @@
+/* Styling of the properties headline */
+.aside-properties-headline{
+  font-family: "Roboto";
+  font-size: 15px;
+  font-weight: normal;
+  color: #ffffff;
+  text-align: center;
+}
+
+/* Styling of the properties different sections */
+.properties-list{
+  width: 100%;
+  height: max-content;
+  padding: 20px 0px;
+  box-sizing: border-box;
+  list-style: none;
+  margin: 0px;
+  padding-top: 0px;
+}
+
+.properties-list-element{
+  width: calc(100% - 40px);
+  height: fit-content;
+  padding: 10px 20px;
+  border-top: 2px solid #23242c;
+
+}
+
+.properties-list h3{
+  font-family: "Roboto";
+  font-size: 12px;
+  font-weight: normal;
+  color: #c2c1c7;
+  margin-top: 0px;
+}
+
+.properties-list label{
+  font-family: "Roboto";
+  font-size: 12px;
+  font-weight: lighter;
+  color: #c2c1c7;
+}
+
+.properties-list input{
+  font-family: "Roboto";
+  font-size: 12px;
+  font-weight: lighter;
+  color: #c2c1c7;
+  background-color: #605e68;
+  border: 0px;
+  margin-left: 5px;
+}
+
+.properties-list select, option{
+  font-family: "Roboto";
+  font-size: 12px;
+  font-weight: lighter;
+  color: #c2c1c7;
+  background-color: #605e68;
+  border: 0px;
+  margin-left: 5px;
+}
+
+.properties-list input:focus{
+  outline: none;
+}
+
+.properties-list input::placeholder{
+  color: #ffffff;
+}
+
+.half-size-input{
+  width: calc(30% - 30px);
+}
+
+.full-size-input{
+  width: calc(70% - 30px);
+}
+
+

@@ -1,4 +1,4 @@
-import { cameraPos } from "../../Main.js";
+import { appScreen, cameraPos, cameraZoom } from "../../Main.js";
 
 import { wireParams } from "../parameters/wireParams.js";
 
@@ -34,52 +34,65 @@ function Wire(positions, width){
     //Change color of the wire depending on its state.
     if(this.value){context.strokeStyle = wireParams.wireActiveColor;}
     else{context.strokeStyle = wireParams.wireNonActiveColor;}
+    context.lineWidth = cameraZoom/2;
     
     //For every piece of wire draw every segment.
     for(var e = 0; e < this.positions.length; e++){
 
       //Set first vertex.
       context.beginPath();
-      context.moveTo(this.positions[e][0].x + cameraPos.x, this.positions[e][0].y + cameraPos.y);
+      var positionVertex = new Vector3((this.positions[e][0].x - cameraPos.x*window.devicePixelRatio) * cameraZoom + appScreen.offsetWidth/2,
+                                       (this.positions[e][0].y - cameraPos.y*window.devicePixelRatio) * cameraZoom + appScreen.offsetHeight/2, 0);
+      context.moveTo(positionVertex.x, positionVertex.y);
 
       //Continue with inner segments of every piece.
       for(var i = 1; i < this.positions[e].length - 1; i++){
         //Apply a little bevel around the vertices.
-        var dir1 = Vec3.subVector3(this.positions[e][i], this.positions[e][i-1]).unitVector();
-        var dir2 = Vec3.subVector3(this.positions[e][i], this.positions[e][i+1]).unitVector();
-        context.lineTo(this.positions[e][i].x + cameraPos.x - dir1.x*wireParams.wireRadius,
-                 this.positions[e][i].y + cameraPos.y - dir1.y*wireParams.wireRadius);
-        context.lineTo(this.positions[e][i].x + cameraPos.x - (dir1.x*wireParams.wireRadius + dir2.x*wireParams.wireRadius)/3,
-                 this.positions[e][i].y + cameraPos.y - (dir1.y*wireParams.wireRadius + dir2.y*wireParams.wireRadius)/3);
-        context.lineTo(this.positions[e][i].x + cameraPos.x - dir2.x*wireParams.wireRadius,
-                 this.positions[e][i].y + cameraPos.y - dir2.y*wireParams.wireRadius);
+        positionVertex = new Vector3((this.positions[e][i].x - cameraPos.x*window.devicePixelRatio) * cameraZoom + appScreen.offsetWidth/2,
+                                     (this.positions[e][i].y - cameraPos.y*window.devicePixelRatio) * cameraZoom + appScreen.offsetHeight/2, 0)
+        var positionVertexplus = new Vector3((this.positions[e][i+1].x - cameraPos.x*window.devicePixelRatio) * cameraZoom + appScreen.offsetWidth/2,
+                                             (this.positions[e][i+1].y - cameraPos.y*window.devicePixelRatio) * cameraZoom + appScreen.offsetHeight/2, 0)
+        var positionVertexminus = new Vector3((this.positions[e][i-1].x - cameraPos.x*window.devicePixelRatio) * cameraZoom + appScreen.offsetWidth/2,
+                                              (this.positions[e][i-1].y - cameraPos.y*window.devicePixelRatio) * cameraZoom + appScreen.offsetHeight/2, 0)
+        var dir1 = Vec3.subVector3(positionVertex, positionVertexminus).unitVector();
+        var dir2 = Vec3.subVector3(positionVertex, positionVertexplus).unitVector();
+        context.lineTo(positionVertex.x - dir1.x*wireParams.wireRadius,
+                       positionVertex.y - dir1.y*wireParams.wireRadius);
+        context.lineTo(positionVertex.x - (dir1.x*wireParams.wireRadius + dir2.x*wireParams.wireRadius)/3,
+                       positionVertex.y - (dir1.y*wireParams.wireRadius + dir2.y*wireParams.wireRadius)/3);
+        context.lineTo(positionVertex.x - dir2.x*wireParams.wireRadius,
+                       positionVertex.y - dir2.y*wireParams.wireRadius);
       }
 
       //Finish with last vertex.
-      context.lineTo(this.positions[e][this.positions[e].length - 1].x + cameraPos.x,
-               this.positions[e][this.positions[e].length - 1].y + cameraPos.y);
+      positionVertex = new Vector3((this.positions[e][this.positions[e].length - 1].x - cameraPos.x*window.devicePixelRatio) * cameraZoom + appScreen.offsetWidth/2,
+                                   (this.positions[e][this.positions[e].length - 1].y - cameraPos.y*window.devicePixelRatio) * cameraZoom + appScreen.offsetHeight/2, 0);
+      context.lineTo(positionVertex.x, positionVertex.y);
       context.stroke();
 
       if(this.width > 1 && this.positions[e].length > 1){
         //Show the width line of the wire.
+        context.lineWidth = 1
         var segmentToDrawWidth = Math.round(this.positions[e].length/2);
         var intersectPoint = Vec3.mulVector3(Vec3.addVector3(this.positions[e][segmentToDrawWidth], this.positions[e][segmentToDrawWidth - 1]), 0.5);
         var despHorizontal = this.positions[e][segmentToDrawWidth].x == this.positions[e][segmentToDrawWidth - 1].x ? 10:0;
         var despVertical = this.positions[e][segmentToDrawWidth].y == this.positions[e][segmentToDrawWidth - 1].y ? -10:0;
+        positionVertex = new Vector3((intersectPoint.x - cameraPos.x*window.devicePixelRatio) * cameraZoom + appScreen.offsetWidth/2,
+                                     (intersectPoint.y - cameraPos.y*window.devicePixelRatio) * cameraZoom + appScreen.offsetHeight/2, 0)
         context.beginPath();
-        context.moveTo(intersectPoint.x - 5, intersectPoint.y - 5);
-        context.lineTo(intersectPoint.x + 5, intersectPoint.y + 5);
+        context.moveTo(positionVertex.x - 2*cameraZoom, positionVertex.y - 2*cameraZoom);
+        context.lineTo(positionVertex.x + 2*cameraZoom, positionVertex.y + 2*cameraZoom);
         context.stroke();
   
         //Show the width number of the wire.
         context.fillStyle = wireParams.wireWidthColor;
-        context.font = wireParams.wireWidthFont;
+        context.font = wireParams.wireWidthFont(10);
         context.fillText(this.width,
-                         intersectPoint.x + despHorizontal,
-                         intersectPoint.y + despVertical);
+                         positionVertex.x + despHorizontal,
+                         positionVertex.y + despVertical);
       }
     }
-
+    context.lineWidth = 1;
   }
 
   //Update method for the wire.
@@ -107,8 +120,8 @@ function Wire(positions, width){
     for(var i = 0; i < this.positions.length; i++){
       binary += binaryFixedSize(this.positions[i].length, 8);
       for(var e = 0; e < this.positions[i].length; e++){
-        binary += binaryFixedSize(this.positions[i][e].x, 12); 
-        binary += binaryFixedSize(this.positions[i][e].y, 12); 
+        binary += binaryFixedSize(this.positions[i][e].x + 2**11, 12); 
+        binary += binaryFixedSize(this.positions[i][e].y + 2**11, 12); 
       }
     }
     binary += binaryFixedSize(this.connections.length, 12);
@@ -132,8 +145,8 @@ function Wire(positions, width){
       var positionLength = parseInt(getBitsFromBinary(binary, pointer, 8), 2);
       var position = [];
       for(var e = 0; e < positionLength; e++){
-        position.push(new Vector3(parseInt(getBitsFromBinary(binary, pointer, 12), 2),
-                                  parseInt(getBitsFromBinary(binary, pointer, 12), 2)))
+        position.push(new Vector3(parseInt(getBitsFromBinary(binary, pointer, 12), 2) - 2**11,
+                                  parseInt(getBitsFromBinary(binary, pointer, 12), 2) - 2**11))
       }
       positions.push(position);
     }

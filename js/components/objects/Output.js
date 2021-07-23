@@ -4,6 +4,7 @@ import { outputParams } from "../parameters/outputParams.js";
 
 import { Vector3, Vec3 } from "../../utils/Vector3.js";
 import { smoothContour, binaryFixedSize, binaryFromString, getBitsFromBinary, stringFromBinary } from "../../utils/Utiles.js";
+import { appScreen, cameraPos, cameraZoom } from "../../Main.js";
 
 ////OBJECT DECLARATION.
 /*This object is used to allow the user to make outputs to the circuit
@@ -32,7 +33,7 @@ function Output(position, width, tag){
   }
 
   //Variables for logic.
-  this.input = new Pin(this.position, this.width, 0, undefined, undefined, "in");                 //Saves the state of the output.
+  this.input = new Pin(new Vector3(0, 0, 0), this.width, 0, undefined, undefined, "in");                 //Saves the state of the output.
 
   ////INTERNAL METHODS
   //Drawing method for the output.
@@ -46,10 +47,12 @@ function Output(position, width, tag){
     context.fillStyle = outputParams.outputCaseColor;
     context.strokeStyle = outputParams.outputCaseBorderColor;
     context.beginPath();
-    context.moveTo(this.contour[0].x, this.contour[0].y);
+    context.moveTo((this.contour[0].x - cameraPos.x*window.devicePixelRatio) * cameraZoom + appScreen.offsetWidth/2,
+                   (this.contour[0].y - cameraPos.y*window.devicePixelRatio) * cameraZoom + appScreen.offsetHeight/2);
 
     for(var i = 1; i < this.contour.length; i++){
-      context.lineTo(this.contour[i].x, this.contour[i].y);
+      context.lineTo((this.contour[i].x - cameraPos.x*window.devicePixelRatio) * cameraZoom + appScreen.offsetWidth/2,
+                     (this.contour[i].y - cameraPos.y*window.devicePixelRatio) * cameraZoom + appScreen.offsetHeight/2);
     }
 
     context.fill();
@@ -57,20 +60,24 @@ function Output(position, width, tag){
 
     //Draw the touchable values.
     for(var i = 0; i < this.width; i++){
-      var bitValue = (this.input.connection.value >> i) % 2;
+      var bitValue = (this.input.connection.value >> (this.width - i - 1)) % 2;
 
       if(bitValue){context.fillStyle = outputParams.outputActiveColor;}
       else{context.fillStyle = outputParams.outputNonActiveColor;}
 
-      context.fillRect(this.position.x +10*(this.width - i) - 4, this.position.y - 4, 8, 8);
+      context.fillRect((this.position.x - cameraPos.x*window.devicePixelRatio) * cameraZoom + appScreen.offsetWidth/2 +(10*(i+1) - 4)*cameraZoom,
+                       (this.position.y - cameraPos.y*window.devicePixelRatio) * cameraZoom + appScreen.offsetHeight/2 - 4*cameraZoom, 8*cameraZoom, 8*cameraZoom);
+
+      context.strokeRect((this.position.x - cameraPos.x*window.devicePixelRatio) * cameraZoom + appScreen.offsetWidth/2 + (10*(i+1) - 4)*cameraZoom,
+                         (this.position.y - cameraPos.y*window.devicePixelRatio) * cameraZoom + appScreen.offsetHeight/2 - 4*cameraZoom, 8*cameraZoom, 8*cameraZoom);
     }
 
     //Draw the output tag.
     context.fillStyle = outputParams.outputTagColor;
-    context.font = outputParams.outputTextFont;
+    context.font = outputParams.outputTextFont(10);
     context.fillText(this.tag,
-                     this.position.x + 10*this.width + 20,
-                     this.position.y + 3);
+      (this.position.x - cameraPos.x*window.devicePixelRatio) * cameraZoom + appScreen.offsetWidth/2 + (10*this.width + 20)*cameraZoom,
+      (this.position.y - cameraPos.y*window.devicePixelRatio) * cameraZoom + appScreen.offsetHeight/2 + 3*cameraZoom);
 
     //Draw output pin.
     this.input.draw(context, this.position);
@@ -90,8 +97,8 @@ function Output(position, width, tag){
   /*This method is used to encode the input in binary.*/
   this.toBin = function(pins){
     return binaryFixedSize(this.width, 6) + 
-            binaryFixedSize(this.position.x, 12) + 
-            binaryFixedSize(this.position.y, 12) +
+            binaryFixedSize(this.position.x + 2**11, 12) + 
+            binaryFixedSize(this.position.y + 2**11, 12) +
             binaryFixedSize(pins.indexOf(this.input), 12) + 
             binaryFixedSize(this.tag.length, 5) + 
             binaryFromString(this.tag);
@@ -102,8 +109,8 @@ function Output(position, width, tag){
   this.binToObject = function(binary, pointer){
     //Parse to binary some properties.
     var width = parseInt(getBitsFromBinary(binary, pointer, 6), 2);
-    var position = new Vector3(parseInt(getBitsFromBinary(binary, pointer, 12), 2),
-                               parseInt(getBitsFromBinary(binary, pointer, 12), 2));
+    var position = new Vector3(parseInt(getBitsFromBinary(binary, pointer, 12), 2) - 2**11,
+                               parseInt(getBitsFromBinary(binary, pointer, 12), 2) - 2**11);
     var outputPin = parseInt(getBitsFromBinary(binary, pointer, 12), 2);
     var tagLength = parseInt(getBitsFromBinary(binary, pointer, 5), 2);
     var tag = stringFromBinary(getBitsFromBinary(binary, pointer, tagLength*8), 2);

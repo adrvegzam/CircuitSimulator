@@ -27,8 +27,12 @@ function Circuit(canvasElement){
   //Drawing variables.
   this.canvasElement = canvasElement;         //Saves the canvas element.
   this.canvasContext;                         //Saves the context of the canvas.
-
-  if(this.canvasElement != undefined){ this.canvasContext = this.canvasElement.getContext("2d"); }  
+  
+  
+  if(this.canvasElement != undefined){ 
+    this.canvasContext = this.canvasElement.getContext("2d"); 
+    this.canvasContext.imageSmoothingEnabled= false;            //Set front canvas context aliasing to false.
+  }  
 
   ////INTERNAL METHODS.
   //Method to delete elements from the circuit.
@@ -233,6 +237,7 @@ function Circuit(canvasElement){
   //Parse bin to object method for the circuit.
   /*This method is used to decode the circuit from binary.*/
   this.binToObject = function(binary){
+
     var wires = [];             //Saves the wires of the circuit.
     var pins = [];              //Saves the pins of the circuit.
     var inputs = [];            //Saves the inputs of the circuit.  
@@ -247,31 +252,31 @@ function Circuit(canvasElement){
     for(var i = 0; i < wiresLength; i++){
       wires.push((new Wire()).binToObject(binary, pointer));
     }
-
+    
     //Decodes the pins of the circuit from the binary.
     var pinsLength = parseInt(getBitsFromBinary(binary, pointer, 12), 2);
     for(var i = 0; i < pinsLength; i++){
       pins.push((new Pin()).binToObject(binary, pointer));
     }
-
+    
     //Decodes the inputs of the circuit from the binary.
     var inputsLength = parseInt(getBitsFromBinary(binary, pointer, 12), 2);
     for(var i = 0; i < inputsLength; i++){
       inputs.push((new Input()).binToObject(binary, pointer));
     }
-
+    
     //Decodes the outputs of the circuit from the binary.
     var outputsLength = parseInt(getBitsFromBinary(binary, pointer, 12), 2);
     for(var i = 0; i < outputsLength; i++){
       outputs.push((new Output()).binToObject(binary, pointer));
     }
-
+    
     //Decodes the chips of the circuit from the binary.
     var chipsLength = parseInt(getBitsFromBinary(binary, pointer, 12), 2);
     for(var i = 0; i < chipsLength; i++){
       chips.push((new Chip()).binToObject(binary, pointer));
     }
-
+    
     //Creates the new circuit.
     var circuit = new Circuit();
     circuit.wires = wires;
@@ -311,8 +316,18 @@ function Circuit(canvasElement){
 
     //Loop through all the chips and adjust references.
     for(var i = 0; i < circuit.chips.length; i++){
-      var chip = new Chip(circuit.chips[i].position, circuit.chips[i].inputs.length, 
-                          circuit.chips[i].outputs.length, circuit.chips[i].name);
+      var chip;
+      var width = Math.max(circuit.chips[i].inputs.length, circuit.chips[i].outputs.length);
+      if(circuit.chips[i].name == "MUX"){
+        chip = new Chip(circuit.chips[i].position, Math.floor(Math.log2(circuit.chips[i].inputs.length)), 
+                      circuit.chips[i].outputs.length, circuit.chips[i].name, width);
+      }else if(circuit.chips[i].name == "DEMUX"){
+        chip = new Chip(circuit.chips[i].position, circuit.chips[i].inputs.length - 1, 
+                      circuit.chips[i].outputs.length, circuit.chips[i].name, width);
+      }else{
+        chip = new Chip(circuit.chips[i].position, circuit.chips[i].inputs.length, 
+                      circuit.chips[i].outputs.length, circuit.chips[i].name, width);
+      }
       circuit.chips[i].inputs = circuit.chips[i].inputs.map((el) => circuit.pins[el]);
       circuit.chips[i].outputs = circuit.chips[i].outputs.map((el) => circuit.pins[el]);
       circuit.chips[i].inputs.forEach((el, index) => {el.position = chip.inputs[index].position;
@@ -321,7 +336,7 @@ function Circuit(canvasElement){
       circuit.chips[i].outputs.forEach((el, index) => {el.position = chip.outputs[index].position;
                                                        el.tag = chip.outputs[index].tag;
                                                        el.tagPosition = chip.outputs[index].tagPosition;});
-    }
+      }
 
     return circuit;
   }

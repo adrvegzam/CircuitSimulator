@@ -3,6 +3,8 @@ import { Wire } from "./Wire.js";
 import { pinParams } from "../parameters/pinParams.js";
 
 import { binaryFixedSize, getBitsFromBinary, stringFromBinary } from "../../utils/Utiles.js";
+import { appScreen, cameraPos, cameraZoom } from "../../Main.js";
+import { Vec3, Vector3 } from "../../utils/Vector3.js";
 
 ////OBJECT DECLARATION.
 /*This object is used as an intermediary between the inputs and outputs of a chip
@@ -36,40 +38,47 @@ function Pin(position, width, options, tag, tagPosition, type){
   ////INTERNAL METHODS
   //Drawing method for the pin.
   /*This method is used for drawing the pin.*/
-  this.draw = function(context){
+  this.draw = function(context, origin){
     //Change color of the pin depending on its state.
-    if(this.connection.value){context.fillStyle = pinParams.pinActiveColor; context.strokeStyle = pinParams.pinActiveBorderColor;}
+    var absolutePosition = Vec3.addVector3(this.position, origin);
+    var gradient = context.createRadialGradient((absolutePosition.x - cameraPos.x*window.devicePixelRatio) * cameraZoom + appScreen.offsetWidth/2, 
+                                                (absolutePosition.y - cameraPos.y*window.devicePixelRatio) * cameraZoom + appScreen.offsetHeight/2, 1*cameraZoom,
+                                                (absolutePosition.x - cameraPos.x*window.devicePixelRatio) * cameraZoom + appScreen.offsetWidth/2, 
+                                                (absolutePosition.y - cameraPos.y*window.devicePixelRatio) * cameraZoom + appScreen.offsetHeight/2, 5*cameraZoom);
+    gradient.addColorStop(0, pinParams.pinActiveColor);
+    gradient.addColorStop(1, pinParams.pinNonActiveColor);
+    if(this.connection.value){context.fillStyle = gradient; context.strokeStyle = pinParams.pinActiveBorderColor;}
     else{context.fillStyle = pinParams.pinNonActiveColor; context.strokeStyle = pinParams.pinNonActiveBorderColor;}
 
     //Draw the pin as a circle with border.
     context.beginPath();
-    context.arc(this.position.x,
-                this.position.y,
-                pinParams.pinRadius, 0, Math.PI*2);
+    context.arc((absolutePosition.x - cameraPos.x*window.devicePixelRatio) * cameraZoom + appScreen.offsetWidth/2,
+                (absolutePosition.y - cameraPos.y*window.devicePixelRatio) * cameraZoom + appScreen.offsetHeight/2,
+                pinParams.pinRadius * cameraZoom, 0, Math.PI*2);
     context.fill();
     context.stroke();
 
     if(this.tag != undefined && this.tagPosition != undefined){
       //Draw the pin tag.
+      var newTag = this.tag + "["+this.width+":0]";
       context.fillStyle = pinParams.pinTagColor;
-      context.font = pinParams.pinTextFont;
-      context.fillText(this.tag,
-                       this.tagPosition.x + this.position.x - this.tag.length*5.5/2 - 2.5,
-                       this.tagPosition.y + this.position.y + 4);
+      context.font = pinParams.pinTextFont(5);
+      context.fillText(newTag,
+                       (this.tagPosition.x + absolutePosition.x - cameraPos.x*window.devicePixelRatio) * cameraZoom - cameraZoom*newTag.length*2.75/2 + appScreen.offsetWidth/2,
+                       (this.tagPosition.y + absolutePosition.y - cameraPos.y*window.devicePixelRatio + 2) * cameraZoom + appScreen.offsetHeight/2);
     }
   }
 
   //Moving method for the pin.
   /*This method is used to move the position of the pin.*/
   this.move = function(movementVector){
-    this.position.add(movementVector);
-    this.tagPosition.add(movementVector);
+    absolutePosition.add(movementVector);
   }
 
   //Parse to bin method for the pin.
   /*This method is used to encode the pin in binary.*/
   this.toBin = function(wires){
-    console.log(this.connection.value)
+    console.log(this.position);
     return binaryFixedSize(this.type=="in"?1:0, 1) +
            binaryFixedSize(this.options, 1) + 
            binaryFixedSize(this.connection instanceof Wire?1:0, 1) + 
@@ -77,8 +86,8 @@ function Pin(position, width, options, tag, tagPosition, type){
            binaryFixedSize(this.connection instanceof Wire?wires.indexOf(this.connection):this.connection.value,
                            this.connection instanceof Wire?12:this.width) + 
            (this.options != 1? "":(
-             binaryFixedSize(this.position.x, 6) + 
-             binaryFixedSize(this.position.y, 6) + 
+             binaryFixedSize(this.position.x + 2**5, 6) + 
+             binaryFixedSize(this.position.y + 2**5, 6) + 
              binaryFixedSize(this.tag.length, 5) + 
              binaryFromString(this.tag) +
              binaryFixedSize(this.tagPosition.x, 3) + 
@@ -105,12 +114,12 @@ function Pin(position, width, options, tag, tagPosition, type){
 
     //If it has options, parse into binary option dependant properties.
     if(options){
-      position = new Vector3(parseInt(getBitsFromBinary(binary, pointer, 6), 2),
-                             parseInt(getBitsFromBinary(binary, pointer, 6), 2));
+      position = new Vector3(parseInt(getBitsFromBinary(binary, pointer, 6), 2) - 2**5,
+                             parseInt(getBitsFromBinary(binary, pointer, 6), 2) - 2**5);
       tagLength = parseInt(getBitsFromBinary(binary, pointer, 5), 2);
       tag = stringFromBinary(getBitsFromBinary(binary, pointer, tagLength*8), 2);
-      tagPosition = new Vector3(parseInt(getBitsFromBinary(binary, pointer, 3), 2),
-                                parseInt(getBitsFromBinary(binary, pointer, 3), 2));
+      tagPosition = new Vector3(parseInt(getBitsFromBinary(binary, pointer, 3), 2) - 2**2,
+                                parseInt(getBitsFromBinary(binary, pointer, 3), 2) - 2**2);
     }
 
     //Create the pin and return it.

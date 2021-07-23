@@ -1,26 +1,157 @@
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
   <head>
-    <link rel="stylesheet" href="css/Css.css">
+    <link rel="stylesheet" href="css/index.css">
     <meta charset="utf-8">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Syne+Mono&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Varela+Round&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" integrity="sha512-iBBXm8fW90+nuLcSKlbmrPcLa0OT92xO1BIsZ+ywDWZCvqsWgccV3gFoRBv0z+8dLJgyAHIhR35VZc2oM/gI1w==" crossorigin="anonymous" referrerpolicy="no-referrer" />    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;500;700;900&display=swap" rel="stylesheet">  </head>
     <title>Simulador de Circuitos</title>
-  </head>
   <body>
-    <canvas id="CanvasBackground"></canvas>
-    <canvas id="Canvas"></canvas>
-    <div>
-      <input id="addModeButton" type="button" value="Add Mode">
-      <input id="deleteModeButton" type="button" value="Delete Mode">
-      <input id="inputModeButton" type="button" value="Input Mode">
-      <input id="optionsText" type="text" value="component: chip; inputs: 3; outputs: 3; name: AND; value: 0; width: 4; tagName: Input1;" style="width:350px;">
-      <input id="changeOptions" type="button" value="Change Options">
-      <a id="downloadFileButton" target="_blank" download="circuit.txt">Download File</a>
-      <input id="loadFileButton" type="button" value="Load File">
+    <header class="header">
       <input id="loadFile" type="file" style="display:none;">
-    </div>
+      <nav class="navbar">
+        <img class="nav-logo" src="images/logo.png" alt="">
+        <ul class="nav-menu">
+          <li class="menu-option"><a href="#">Project <i class="fas fa-angle-down"></i></a>
+            <ul class="nav-submenu">
+              <li class="menu-option-dropdown"><a href="#"><i class="fas fa-cloud-download-alt"></i> Load project</a></li>
+              <li class="menu-option-dropdown"><a href="#"><i class="fas fa-cloud-upload-alt"></i> Save project</a></li>
+              <li class="menu-option-dropdown"><a href="#"><i class="fas fa-share-alt"></i> Share</a></li>
+            </ul>
+          </li>
+          <li class="menu-option"><a href="#">Circuit <i class="fas fa-angle-down"></i></a>
+            <ul class="nav-submenu">
+              <li class="menu-option-dropdown"><a href="#" id="loadFileServer"><i class="fas fa-cloud-download-alt"></i> Load circuit from server</a></li>
+              <li class="menu-option-dropdown"><a href="#" id="saveFileServer"><i class="fas fa-cloud-upload-alt"></i> Save circuit into server</a></li>
+              <li class="menu-option-dropdown"><a href="#" id="loadFileOffline"><i class="fas fa-file-upload"></i> Load circuit offline</a></li>
+              <li class="menu-option-dropdown"><a href="#" id="saveFileOffline"><i class="fas fa-file-download"></i> Save circuit offline</a></li>
+            </ul>
+          </li>
+          <li class="menu-option"><a href="#">Timing <i class="fas fa-angle-down"></i></a>
+            <ul class="nav-submenu">
+              <li class="menu-option-dropdown"><a href="#"><i class="fas fa-wave-square"></i> Open signal visor</a></li>
+              <li class="menu-option-dropdown"><a href="#"><i class="fas fa-wrench"></i> Timing settings</a></li>
+            </ul>
+          </li>
+          <li class="menu-option"><a href="#">Programming <i class="fas fa-angle-down"></i></a>
+            <ul class="nav-submenu">
+              <li class="menu-option-dropdown"><a href="#"><i class="fas fa-memory"></i> Open memory encoder</a></li>
+              <li class="menu-option-dropdown"><a href="#"><i class="fas fa-edit"></i> Open assembler languages</a></li>
+              <li class="menu-option-dropdown"><a href="#"><i class="fas fa-microchip"></i> Open verilog module creator</a></li>
+              <li class="menu-option-dropdown"><a href="#"><i class="fas fa-wrench"></i> Programming settings</a></li>
+            </ul>
+          </li>
+        </ul>
+        <ul class="nav-sign">
+          <li class="menu-option option-sign option-sign-up"><a href="#">Sign up</a></li>
+          <li class="menu-option option-sign option-sign-in"><a href="#">Sign in</a></li>
+          <span class="settings"><a href=""><i class="fas fa-cog"></i></a></span>
+        </ul>
+      </nav>
+    </header>
+
+    <main class="main-section">
+      <aside class="aside-options">
+        
+      </aside>
+    
+      <article id="app-view" class="app-section">
+        <canvas id="CanvasBackground"></canvas>
+        <canvas id="Canvas"></canvas>
+        <div class="canvas-overlay"></div>
+        <div class="tool-container">
+          <div class="tool" id="selectTool">
+            <i class="fas fa-mouse-pointer"></i>
+            <span class="tooltip">Select</span>
+          </div>
+          <div class="tool" id="interactTool">
+            <i class="fas fa-hand-pointer"></i>
+            <span class="tooltip">Interact</span>
+          </div>
+          <div class="tool" id="moveTool">
+            <i class="fas fa-arrows-alt"></i>
+            <span class="tooltip">Move</span>
+          </div>
+          <div class="tool" id="connectTool">
+            <i class="fas fa-project-diagram"></i>
+            <span class="tooltip">Connect</span>
+          </div>
+          <div class="tool" id="chipTool">
+            <i class="fas fa-microchip"></i>
+            <span class="tooltip">Add Chip</span>
+          </div>
+          <div class="tool" id="inputTool">
+            <p>IN</p>
+            <span class="tooltip">Add Input</span>
+          </div>
+          <div class="tool" id="outputTool">
+            <p>OUT</p>
+            <span class="tooltip">Add Output</span>
+          </div>
+          <div class="tool" id="cutTool">
+            <i class="fas fa-cut"></i>
+            <span class="tooltip">Cut</span>
+          </div>
+          <div class="tool" id="copyTool">
+            <i class="fas fa-copy"></i>
+            <span class="tooltip">Copy</span>
+          </div>
+          <div class="tool" id="pasteTool">
+            <i class="fas fa-paste"></i>
+            <span class="tooltip">Paste</span>
+          </div>
+          <div class="tool" id="deleteTool">
+            <i class="fas fa-trash-alt"></i>
+            <span class="tooltip">Delete</span>
+          </div> 
+        </div>
+      </article>
+
+      <aside class="aside-properties">
+        <h2 class="aside-properties-headline">Properties</h2>
+        <ul class="properties-list">
+          <li class="properties-list-element"><h3>Circuit properties</h3>
+            <label for="circuitName">Circuit name: </label><input class="full-size-input" type="text" name="circuitName" id="textCircuitName" value="Untitled">
+          </li>
+          <li class="properties-list-element"><h3>Chip properties</h3>
+            <label for="inputs">Nº inputs: </label><input class="half-size-input" type="number" name="inputs" id="numberInputs" value="2">
+            <label for="outputs">Nº outputs: </label><input class="half-size-input" type="number" name="outputs" id="numberOutputs" value="1"><br>
+            <label for="name">Chip type: </label><select name="name" id="textName">
+              <option value="AND" selected>AND</option>
+              <option value="OR">OR</option>
+              <option value="NAND">NAND</option>
+              <option value="NOR">NOR</option>
+              <option value="XOR">XOR</option>
+              <option value="XNOR">XNOR</option>
+              <option value="NOT">NOT</option>
+              <option value="BUF">BUF</option>
+              <option value="HA">HA</option>
+              <option value="FA">FA</option>
+              <option value="DEC">DEC</option>
+              <option value="MUX">MUX</option>
+              <option value="DEMUX">DEMUX</option>
+              <option value="DLATCH">DLATCH</option>
+              <option value="SRLATCH">SRLATCH</option>
+              <option value="REGRW">REGRW</option>
+              <option value="REGW">REGW</option>
+              <option value="SPLITTER">SPLITTER</option>
+              <option value="JOINER">JOINER</option>
+            </select>
+          </li>
+          <li class="properties-list-element"><h3>Connection properties</h3>
+            <label for="width">Bus lines: </label><input class="half-size-input" type="number" name="width" id="numberWidth" value="1">
+          </li>
+          <li class="properties-list-element"><h3>In/Out properties</h3>
+            <label for="inTag">Input tag text: </label><input class="full-size-input" type="text" name="inTag" id="textInTag" value="I1"><br>
+            <label for="outTag">Output tag text: </label><input class="full-size-input" type="text" name="outTag" id="textOutTag" value="O1">
+          </li>
+        </ul>
+      </aside>
+    </main>
+
+    
   </body>
 </html>
 

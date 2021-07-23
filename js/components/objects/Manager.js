@@ -4,9 +4,9 @@ import { Output } from "./Output.js";
 import { Input } from "./Input.js";
 import { Circuit } from "./Circuit.js";
 
-import { eventHandler, circuit, manager } from "../../Main.js";
+import { eventHandler, circuit, manager, cameraZoom, cameraPos, setCameraPos, setCameraZoom } from "../../Main.js";
 
-import { mousePos, clickPos } from "../../utils/Events.js";
+import { mousePos, clickPos, mousePressed, endClickPos, startClickPos } from "../../utils/Events.js";
 import { keyboard } from "../../utils/Keyboard.js";
 import { Vec3, Vector3 } from "../../utils/Vector3.js";
 import { distanceToSegment, gridFixed } from "../../utils/Utiles.js";
@@ -26,7 +26,7 @@ function Manager(circuit){
   //Variables for the logic.
   this.circuit = circuit;   //Saves the circuit of the manager.
   this.tool = "add";        //Saves the actual tool in use of the manager.
-  this.toolOptions = "component: chip; inputs: 3; outputs: 3; name: AND; value: 0; width: 4; tagName: Input1;";     //Saves the options for the tools.
+  this.toolOptions = "component: chip; inputs: 2; outputs: 1; name: AND; value: 0; width: 1; inTag: I1; outTag: O1;";     //Saves the options for the tools.
   
   var newChip = null;       //Saves an auxiliary chip.
   var newInput = null;      //saves an auxiliary input.
@@ -55,7 +55,7 @@ function Manager(circuit){
   /*This method takes as input a wire and another wire, and makes a connection between them*/
   this.connectWireToWire = function(wire, targetWire){
     targetWire.positions[targetWire.positions.length] = wire.positions[0]; 
-    wire = targetWire;
+    return targetWire;
   }
 
   //Method to get the closest chip given a position.
@@ -102,9 +102,15 @@ function Manager(circuit){
   //Method to get the closest pin given a position.
   /*This method takes as input a position and returns the closest pin if exists*/
   this.getClosestPin = function(clickPos){
-    if(this.circuit.pins.length == 0){return [undefined, undefined];}
-    return this.circuit.pins.map((pin) => [pin, Vec3.subVector3(pin.position, clickPos).modulo()])
-                            .sort((a, b) => a[1] - b[1])[0];
+    var pins = [];
+    this.circuit.chips.forEach(chip => chip.inputs.forEach(input => pins.push([input, Vec3.addVector3(input.position, chip.position)])));
+    this.circuit.chips.forEach(chip => chip.outputs.forEach(output => pins.push([output, Vec3.addVector3(output.position, chip.position)])));
+    this.circuit.inputs.forEach(input => pins.push([input.output, Vec3.addVector3(input.output.position, input.position)]));
+    this.circuit.outputs.forEach(output => pins.push([output.input, Vec3.addVector3(output.input.position, output.position)]));
+    console.log(pins);
+    if(pins.length == 0){return [undefined, undefined];}
+    return pins.map((pin) => [pin[0], Vec3.subVector3(pin[1], clickPos).modulo()])
+               .sort((a, b) => a[1] - b[1])[0];
   }
 
   //Method to get a certian option from the tool options.
@@ -113,6 +119,15 @@ function Manager(circuit){
     var indexOption = this.toolOptions.search(optionName);
     var indexEnd = this.toolOptions.indexOf(";", indexOption);
     return this.toolOptions.substring(indexOption + optionName.length + 1, indexEnd).trim();
+  }
+
+  //Method to change a certian option from the tool options.
+  /*This methos takes as input the name of one tool parameter and its value to change*/
+  this.setOptionValue = function(optionName, value){
+    var indexOption = this.toolOptions.search(optionName);
+    var indexEnd = this.toolOptions.indexOf(";", indexOption);
+    this.toolOptions = this.toolOptions.substring(0, indexOption + optionName.length + 1).trim() + value +
+                       this.toolOptions.substring(indexEnd, this.toolOptions.length).trim();
   }
 
   //Method to chnage the current tool selected.
@@ -153,15 +168,18 @@ function Manager(circuit){
     var binaryData = this.circuit.toBin();
     var fileToSave;                           //Saves the file object to download.
     var dataToSave = [binaryData];            //saves the data that goes into the file
+    var filename = document.getElementById("textCircuitName").value + ".txt";  //Saves the name of the file to be saved.
+    console.log(filename);
 
     //Add the data and properties to the file.
     var propertiesOfFile = {type: 'text/plain'}; 
-    try{ fileToSave = new File(dataToSave, "circuit.txt", propertiesOfFile); } 
+    try{ fileToSave = new File(dataToSave, filename, propertiesOfFile); } 
     catch(e){ fileToSave = new Blob(dataToSave, propertiesOfFile); }
 
     //Create url to download the file.
     var url = URL.createObjectURL(fileToSave);
-    document.getElementById('downloadFileButton').href = url;
+    document.getElementById('saveFileOffline').download = filename;
+    document.getElementById('saveFileOffline').href = url;
   }
 
   ////MAIN METHODS
@@ -183,6 +201,7 @@ function Manager(circuit){
   /*This method gets as input a click position and depending on the tool and options resolves the interaction*/
   this.interactCircuit = function(clickPos){
 
+    var clickPosGrid = gridFixed(clickPos);           //Saves the grided position of the click.
     //Do something depending on the tool selected.
     switch(this.tool){
       //Check if the tool is the element addition.
@@ -194,12 +213,13 @@ function Manager(circuit){
           case "chip":
 
             //Get parameters for the chip.
-            var inputs = this.getOptionValue("inputs");               //Saves the number of inputs of the chip.
-            var outputs = this.getOptionValue("outputs");             //Saves the number of outputs of the chip.
+            var inputs = parseInt(this.getOptionValue("inputs"));               //Saves the number of inputs of the chip.
+            var outputs = parseInt(this.getOptionValue("outputs"));             //Saves the number of outputs of the chip.
             var name = this.getOptionValue("name");                   //Saves the name of the chip.
+            var width = parseInt(this.getOptionValue("width"));                 //Saves the width of the chip.
             
             //Add the chip to the circuit.
-            newChip = new Chip(clickPos, inputs, outputs, name);
+            newChip = new Chip(clickPosGrid, inputs, outputs, name, width);
             this.circuit.addElement(newChip);
             newChip = null;
             break;
@@ -208,11 +228,11 @@ function Manager(circuit){
           case "input":
 
             //Get parameters for the input.
-            var tag = this.getOptionValue("tagName");                   //Saves the tag of the input.
+            var tag = this.getOptionValue("inTag");                   //Saves the tag of the input.
             var inputWidth = parseInt(this.getOptionValue("width"));    //Saves the width of the input.
 
             //add the input to the circuit.
-            newInput = new Input(clickPos, inputWidth, tag);
+            newInput = new Input(clickPosGrid, inputWidth, tag);
             this.circuit.addElement(newInput);
             newInput = null;
             break;
@@ -221,11 +241,12 @@ function Manager(circuit){
           case "output":
 
             //Get parameters for the output.
-            var tag = this.getOptionValue("tagName");                     //Saves the tag of the output.
+            var tag = this.getOptionValue("outTag");                     //Saves the tag of the output.
             var outputWidth = parseInt(this.getOptionValue("width"));     //Saves the width of the output.
+            console.log(this.toolOptions, tag);
 
             //add the output to the circuit.
-            newOutput = new Output(clickPos, outputWidth, tag);
+            newOutput = new Output(clickPosGrid, outputWidth, tag);
             this.circuit.addElement(newOutput);
             newOutput = null;
             break;
@@ -242,12 +263,13 @@ function Manager(circuit){
               var connectedToWire = 0;          //Saves true if the wire is connected to another wire.
               
               //Creates new auxiliar wire.
-              newWire = new Wire([[clickPos]], wireWidth);
+              newWire = new Wire([[clickPosGrid]], wireWidth);
               newWireLength = newWire.positions[newWire.positions.length - 1].length;
 
               //Checks for a connection between the wire and the closest pin.
               var closestPin;
-              closestPin = this.getClosestPin(clickPos);
+              closestPin = this.getClosestPin(clickPosGrid);
+              console.log(closestPin);
               if(closestPin[1] < 5){
                 //Check compatibility of bus size.
                 if(closestPin[0].width != newWire.width){
@@ -263,12 +285,13 @@ function Manager(circuit){
               //Checks for a connection between the wire and the closest wire.
               var closestWire;
               if(this.circuit.wires.length != 0){
-                closestWire = this.getClosestWire(clickPos, newWire);
+                closestWire = this.getClosestWire(clickPosGrid, newWire);
                 if(closestWire[1] < 5){
                   //Check compatibility of bus size.
                   if(closestWire[0].width == wireWidth){
-                    this.connectWireToWire(newWire, closestWire[0]);
+                    newWire = this.connectWireToWire(newWire, closestWire[0]);
                     connectedToWire = 1;
+                    console.log(connectedToWire)
                   }else{
                     wireErrors.push("Error de width.");
                     newWire = null;
@@ -288,21 +311,22 @@ function Manager(circuit){
 
               //Get the closest pin and connect to it if compatible.
               var closestPin;
-              closestPin = this.getClosestPin(clickPos);
+              closestPin = this.getClosestPin(clickPosGrid);
               if(closestPin[1] < 5 && closestPin[0].width == newWire.width){
                 this.connectWireToPin(newWire, closestPin[0]); newWire = null;
               }
               
               //Get the closest input and connect to it if compatible.
               var closestInput;
-              closestInput = this.getClosestInput(clickPos);
+              closestInput = this.getClosestInput(clickPosGrid);
               if(closestInput[1] < 5 && closestPin[0].width == newWire.width){
                 this.connectWireToInput(newWire, closestInput[0]); newWire = null;
               }
 
               //Get the closest wire and connect to it if compatible.
               var closestWire;
-              closestWire = this.getClosestWire(clickPos, newWire);
+              closestWire = this.getClosestWire(clickPosGrid, newWire);
+              console.log(closestWire, newWire);
               if(this.circuit.wires.length > 1){
                 if(closestWire[1] < 5){
                   closestWire = closestWire[0];
@@ -373,16 +397,18 @@ function Manager(circuit){
         //If the compononent is a chip, create a new one every time with its position being the mouse position.
         case "chip":
           //Get parameters for the chip.
-          var inputs = selfManager.getOptionValue("inputs");        //Save the number of inputs.
-          var outputs = selfManager.getOptionValue("outputs");      //Save the number of outputs.
+          var inputs = parseInt(selfManager.getOptionValue("inputs"));        //Save the number of inputs.
+          var outputs = parseInt(selfManager.getOptionValue("outputs"));      //Save the number of outputs.
           var name = selfManager.getOptionValue("name");            //Save the name of the chip.
+          var width = parseInt(selfManager.getOptionValue("width"));                 //Saves the width of the chip.
             
-          newChip = new Chip(mousePosGrid, inputs, outputs, name);
+          newChip = new Chip(mousePosGrid, inputs, outputs, name, width);
+
           break;
         //If the compononent is an input, create a new one every time with its position being the mouse position.
         case "input":
           //Get parameters for the input.
-          var tag = selfManager.getOptionValue("tagName");          //Save the tag of the input.
+          var tag = selfManager.getOptionValue("inTag");          //Save the tag of the input.
           var inputWidth = selfManager.getOptionValue("width");     //Save the width of the input.
 
           newInput = new Input(mousePosGrid, inputWidth, tag);
@@ -390,11 +416,16 @@ function Manager(circuit){
         //If the compononent is an output, create a new one every time with its position being the mouse position.
         case "output":
           //Get parameters for the output.
-          var tag = selfManager.getOptionValue("tagName");            //Save the tag of the output.
+          var tag = selfManager.getOptionValue("outTag");            //Save the tag of the output.
           var outputWidth = selfManager.getOptionValue("width");      //Save the width of the output.
 
           newOutput = new Output(mousePosGrid, outputWidth, tag);
           break;
+      }
+    }else if(selfManager.tool == "move"){
+      if(mousePressed){
+        var draggingVector = Vec3.subVector3(endClickPos, startClickPos);
+        setCameraPos(Vec3.subVector3(cameraPos, draggingVector));
       }
     }
 
@@ -416,8 +447,15 @@ function Manager(circuit){
   //Add mouse down event to the circuit.
   eventHandler.mousedownEvents.push(function(event){
     //Parse the position into a grid and call the interact method.
-    var clickPosGrid = gridFixed(clickPos);           //Saves the grided position of the click.
-    selfManager.interactCircuit(clickPosGrid);
+    selfManager.interactCircuit(clickPos);
+  });
+
+  //Add mouse wheel event to the circuit.
+  eventHandler.mousewheelEvents.push(function(event){
+    //Calculate zoom variation according to wheel scroll.
+    var zoomVariation = event.deltaY<0?1.1:1/1.1;
+    setCameraZoom(cameraZoom*zoomVariation);
+    setCameraPos(Vec3.mulVector3(cameraPos, 1/zoomVariation));
   });
 }
 

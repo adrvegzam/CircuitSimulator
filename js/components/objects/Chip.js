@@ -19,7 +19,7 @@ will be the same as the name parameter.
 *name:        Refers to the type of the chip.
 
 */
-function Chip(position, inputs, outputs, name){
+function Chip(position, inputs, outputs, name, width){
   ////INTERNAL VARIABLES.
   //Variables related to chip geometry.
   this.position = position;           //Saves the position of the chip.
@@ -65,8 +65,8 @@ function Chip(position, inputs, outputs, name){
   this.toBin = function(pins){
     var binary =  binaryFixedSize(this.name.length, 5) + 
                   binaryFromString(this.name) + 
-                  binaryFixedSize(this.position.x, 12) + 
-                  binaryFixedSize(this.position.y, 12);
+                  binaryFixedSize(this.position.x + 2**11, 12) + 
+                  binaryFixedSize(this.position.y + 2**11, 12);
 
     binary += binaryFixedSize(this.inputs.length, 4);
     for(var i = 0; i < this.inputs.length; i++){
@@ -85,8 +85,8 @@ function Chip(position, inputs, outputs, name){
     //Parse to binary some properties.
     var nameLength = parseInt(getBitsFromBinary(binary, pointer, 5), 2);
     var name = stringFromBinary(getBitsFromBinary(binary, pointer, nameLength*8));
-    var position = new Vector3(parseInt(getBitsFromBinary(binary, pointer, 12), 2),
-                               parseInt(getBitsFromBinary(binary, pointer, 12), 2));
+    var position = new Vector3(parseInt(getBitsFromBinary(binary, pointer, 12), 2) - 2**11,
+                               parseInt(getBitsFromBinary(binary, pointer, 12), 2) - 2**11);
     
     //Parse to binary the inputs.
     var inputs = [];
@@ -94,16 +94,21 @@ function Chip(position, inputs, outputs, name){
     for(var i = 0; i < inputsLength; i++){
       inputs.push(parseInt(getBitsFromBinary(binary, pointer, 12), 2));
     }
-
+    
     //Parse to binary the outputs.
     var outputs = [];
     var outputsLength = parseInt(getBitsFromBinary(binary, pointer, 4), 2);
     for(var i = 0; i < outputsLength; i++){
       outputs.push(parseInt(getBitsFromBinary(binary, pointer, 12), 2));
     }
-
+    
     //Create the chip and return it.
-    var chip = new Chip(position, inputs.length, outputs.length, name);
+    var chip;
+    var width = Math.max(inputs.length, outputs.length);
+    if(name == "MUX"){chip = new Chip(position, Math.floor(Math.log2(inputs.length)), outputs.length, name, width);}
+    else if(name == "DEMUX"){chip = new Chip(position, inputs.length - 1, outputs.length, name, width);}
+    else{chip = new Chip(position, inputs.length, outputs.length, name, width);}
+    
     chip.inputs = inputs;
     chip.outputs = outputs;
 
@@ -183,10 +188,73 @@ function Chip(position, inputs, outputs, name){
       this.draw = chipDrawing.drawGenericChip; 
       this.construct = chipStructure.constructFA; 
       break;
+    //Adapts the internal methods to the DEC chip.
+    case "DEC": 
+      inputs = inputs; outputs = 2**inputs; 
+      this.update = eval("chipLogic." + name); 
+      this.draw = chipDrawing.drawGenericChip; 
+      this.construct = chipStructure.constructGate; 
+      break;
+    //Adapts the internal methods to the MUX chip.
+    case "MUX": 
+      inputs = inputs + 2**inputs; outputs = 1; 
+      this.update = eval("chipLogic." + name); 
+      this.draw = chipDrawing.drawGenericChip; 
+      this.construct = chipStructure.constructMUX; 
+      break;
+    //Adapts the internal methods to the DEMUX chip.
+    case "DEMUX": 
+      inputs = inputs + 1; outputs = 2**(inputs - 1); 
+      this.update = eval("chipLogic." + name); 
+      this.draw = chipDrawing.drawGenericChip; 
+      this.construct = chipStructure.constructDEMUX; 
+      break;
+    //Adapts the internal methods to the REGRW chip.
+    case "REGRW": 
+      inputs = 4; outputs = 2; 
+      this.update = eval("chipLogic." + name); 
+      this.draw = chipDrawing.drawGenericChip; 
+      this.construct = chipStructure.constructREGRW; 
+      break;
+    //Adapts the internal methods to the REGW chip.
+    case "REGW": 
+      inputs = 3; outputs = 2; 
+      this.update = eval("chipLogic." + name); 
+      this.draw = chipDrawing.drawGenericChip; 
+      this.construct = chipStructure.constructREGW; 
+      break;
+    //Adapts the internal methods to the DLATCH chip.
+    case "DLATCH": 
+      inputs = 2; outputs = 2; 
+      this.update = eval("chipLogic." + name); 
+      this.draw = chipDrawing.drawGenericChip; 
+      this.construct = chipStructure.constructDLATCH; 
+      break;
+    //Adapts the internal methods to the SRLATCH chip.
+    case "SRLATCH": 
+      inputs = 3; outputs = 2; 
+      this.update = eval("chipLogic." + name); 
+      this.draw = chipDrawing.drawGenericChip; 
+      this.construct = chipStructure.constructSRLATCH; 
+      break;
+    //Adapts the internal methods to the SPLITTER chip.
+    case "SPLITTER": 
+      inputs = 1; outputs = width; 
+      this.update = eval("chipLogic." + name); 
+      this.draw = chipDrawing.drawBusChip; 
+      this.construct = chipStructure.constructSPLITTER; 
+      break;
+    //Adapts the internal methods to the JOINER chip.
+    case "JOINER": 
+      inputs = width; outputs = 1; 
+      this.update = eval("chipLogic." + name); 
+      this.draw = chipDrawing.drawBusChip; 
+      this.construct = chipStructure.constructJOINER; 
+      break;
     default: break;
   }
 
-  this.construct(inputs, outputs);
+  this.construct(inputs, outputs, width);
 }
 
 export {Chip};
