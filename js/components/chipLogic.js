@@ -73,6 +73,23 @@ const chipLogic = {
     this.outputs[index].connection.value = 1;
   },
 
+  //This method applies the Encoder function.
+  ENC: function(){
+    var value = 0;
+    var numberActivated = 0;
+    for(var i = 0; i < this.inputs.length; i++){
+      value += this.inputs[i].connection.value == 1?i:0;
+      numberActivated += this.inputs[i].connection.value == 1?1:0;
+    }
+    value = binaryFixedSize(value, this.outputs.length);
+    console.log(value);
+    if(numberActivated == 1){
+      this.outputs.forEach((output, index) => output.connection.value = parseInt(value[this.outputs.length - index - 1]));
+    }else{
+      this.outputs.forEach((output) => output.connection.value = 0);
+    }
+  },
+
   //This method applies the Multiplexer function.
   MUX: function(){
     var muxSize = Math.floor(Math.log2(this.inputs.length)); 
@@ -136,6 +153,30 @@ const chipLogic = {
                                                       .replaceAll("x", "0"), 2); 
   },
 
+  //This method applies the T Latch function.
+  TLATCH: function(){
+    if(this.inputs[0].connection.value && this.inputs[1].connection.value){this.q = this.q==0?1:0;}
+    this.outputs[1].connection.value = this.q;
+    this.outputs[0].connection.value = parseInt(binaryFixedSize(this.q, this.outputs[0].width)
+                                                      .replaceAll("1", "x")
+                                                      .replaceAll("0", "1")
+                                                      .replaceAll("x", "0"), 2); 
+  },
+
+  //This method applies the JK Latch function.
+  JKLATCH: function(){
+    if(this.inputs[0].connection.value && this.inputs[1].connection.value && this.inputs[2].connection.value){this.q = this.q==0?1:0;}
+    else{
+      if(this.inputs[0].connection.value && this.inputs[1].connection.value){this.q = 0;}
+      else if(this.inputs[0].connection.value && this.inputs[2].connection.value){this.q = 1;}
+    }
+    this.outputs[1].connection.value = this.q;
+    this.outputs[0].connection.value = parseInt(binaryFixedSize(this.q, this.outputs[0].width)
+                                                      .replaceAll("1", "x")
+                                                      .replaceAll("0", "1")
+                                                      .replaceAll("x", "0"), 2); 
+  },
+
   //This method applies the Splitter function.
   SPLITTER: function(){
     var value = this.inputs[0].connection.value;
@@ -148,6 +189,7 @@ const chipLogic = {
     this.inputs.forEach((input, index) => value += (2**index)*input.connection.value);
     this.outputs[0].connection.value = value;
   }
+  
 }
 
 export {chipLogic};

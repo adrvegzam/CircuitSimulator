@@ -9,7 +9,7 @@ const pinParams = {
   pinActiveColor: "#2e8ec5",             //Saves the color of an active pin.
   pinNonActiveColor: "#363636",          //Saves the color of a non active pin.
   pinTagColor: "#2e8ec5",                //Saves the color of the pin tag.
-  pinTextFont: function(size){return 'bold ' + size*cameraZoom + 'px monospace';}         //Saves the font type of the text in the pin tag.
+  pinTextFont: function(size){return 'bold ' + size*cameraZoom*window.devicePixelRatio + 'px monospace';}         //Saves the font type of the text in the pin tag.
 }
 
 export { pinParams };

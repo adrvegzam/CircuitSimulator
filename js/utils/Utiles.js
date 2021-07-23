@@ -1,3 +1,4 @@
+import { appScreen, cameraPos, cameraZoom, manager } from "../Main.js";
 import { Vector3, Vec3 } from "./Vector3.js";
 
 ////VECTOR OPERATIONS
@@ -14,6 +15,25 @@ function distanceToSegment(P, A, B) {
   var AB = Vec3.subVector3(B, A);
   var h = Math.min(1, Math.max(0, Vec3.dotProductVector3(AP, AB)/Vec3.dotProductVector3(AB, AB)));
   return Vec3.subVector3(AP, Vec3.mulVector3(AB, h)).modulo();
+}
+
+function spaceToPosition(position){
+  var newPosition = new Vector3(position.x, position.y);
+  newPosition.sub(cameraPos);
+  newPosition.mul(cameraZoom);
+  newPosition.add(new Vector3(appScreen.offsetWidth/2, appScreen.offsetHeight/2));
+  newPosition.mul(window.devicePixelRatio);
+
+  return newPosition;
+}
+
+function positionToSpace(position){
+  var newPosition = new Vector3(position.x, position.y);
+  newPosition.sub(new Vector3(appScreen.offsetWidth/2, appScreen.offsetHeight/2));
+  newPosition.mul(1/cameraZoom);
+  newPosition.add(cameraPos);
+  
+  return newPosition;
 }
 
 ////COMPONENT GENERATION
@@ -40,7 +60,6 @@ function binaryFixedSize(numberToBinary, binarySize){
   if(numberToBinary == false){numberToBinary = 0;}
   if(numberToBinary == true){numberToBinary = 1;}
   var binary = numberToBinary.toString(2);
-  console.log(binary, binarySize);
   var binaryFixed = binary.length==binarySize?binary:"0".repeat(binarySize-binary.length) + binary;
   return binaryFixed;
 }
@@ -71,4 +90,5 @@ function getBitsFromBinary(binary, pointer, numberOfBitsToGet){
 }
 
 export {gridFixed, distanceToSegment, smoothContour, binaryFixedSize,
-         binaryFromString, getBitsFromBinary, stringFromBinary}
+         binaryFromString, getBitsFromBinary, stringFromBinary,
+        positionToSpace, spaceToPosition}

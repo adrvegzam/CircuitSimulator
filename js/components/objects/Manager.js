@@ -9,7 +9,7 @@ import { eventHandler, circuit, manager, cameraZoom, cameraPos, setCameraPos, se
 import { mousePos, clickPos, mousePressed, endClickPos, startClickPos } from "../../utils/Events.js";
 import { keyboard } from "../../utils/Keyboard.js";
 import { Vec3, Vector3 } from "../../utils/Vector3.js";
-import { distanceToSegment, gridFixed } from "../../utils/Utiles.js";
+import { distanceToSegment, gridFixed, positionToSpace } from "../../utils/Utiles.js";
 
 
 ////OBJECT DECLARATION.
@@ -186,7 +186,7 @@ function Manager(circuit){
   //Method in charge of the main loop of the manager, drawing and updating everything.
   /*This method just tells the circuit when to draw and update everything*/
   this.loop = function(){
-    for(var i = 0; i < 10; i++){
+    for(var i = 0; i < 1; i++){
       this.circuit.update();
     }
     this.circuit.draw();
@@ -201,7 +201,7 @@ function Manager(circuit){
   /*This method gets as input a click position and depending on the tool and options resolves the interaction*/
   this.interactCircuit = function(clickPos){
 
-    var clickPosGrid = gridFixed(clickPos);           //Saves the grided position of the click.
+    var clickPosGrid = gridFixed(positionToSpace(clickPos));           //Saves the grided position of the click.
     //Do something depending on the tool selected.
     switch(this.tool){
       //Check if the tool is the element addition.
@@ -346,10 +346,10 @@ function Manager(circuit){
       //Check if the tool is the element deletion.
       case "delete":
         //Get closest element and tell the circuit to delete it.
-        var closestElements = [this.getClosestChip(clickPos),
-                               this.getClosestInput(clickPos),
-                               this.getClosestOutput(clickPos),
-                               this.getClosestWire(clickPos)];
+        var closestElements = [this.getClosestChip(positionToSpace(clickPos)),
+                               this.getClosestInput(positionToSpace(clickPos)),
+                               this.getClosestOutput(positionToSpace(clickPos)),
+                               this.getClosestWire(positionToSpace(clickPos))];
         var closestElement = closestElements.filter(x => x[0])
                                             .sort((a, b) => a[1] - b[1])[0];
         console.log(closestElements, closestElement);
@@ -359,8 +359,8 @@ function Manager(circuit){
       //Check if the tool is the input tool.
       case "input":
         //Get the closest input and update it.
-        var closestInput = this.getClosestInput(clickPos);
-        if(closestInput[0] != undefined){closestInput[0].update(clickPos);}
+        var closestInput = this.getClosestInput(positionToSpace(clickPos));
+        if(closestInput[0] != undefined){closestInput[0].update(positionToSpace(clickPos));}
         break;
 
       //Default case.
@@ -375,7 +375,7 @@ function Manager(circuit){
   //Add mouse move event to the circuit.
   eventHandler.mousemoveEvents.push(function(event){
     
-    var mousePosGrid = gridFixed(mousePos);     //saves the grided mouse position.
+    var mousePosGrid = gridFixed(positionToSpace(mousePos));     //saves the grided mouse position.
     //If the tool selected is the addition tool.
     if(selfManager.tool == "add"){
 
@@ -401,7 +401,7 @@ function Manager(circuit){
           var outputs = parseInt(selfManager.getOptionValue("outputs"));      //Save the number of outputs.
           var name = selfManager.getOptionValue("name");            //Save the name of the chip.
           var width = parseInt(selfManager.getOptionValue("width"));                 //Saves the width of the chip.
-            
+          
           newChip = new Chip(mousePosGrid, inputs, outputs, name, width);
 
           break;
@@ -425,6 +425,7 @@ function Manager(circuit){
     }else if(selfManager.tool == "move"){
       if(mousePressed){
         var draggingVector = Vec3.subVector3(endClickPos, startClickPos);
+        draggingVector.mul(1/cameraZoom);
         setCameraPos(Vec3.subVector3(cameraPos, draggingVector));
       }
     }
@@ -455,7 +456,6 @@ function Manager(circuit){
     //Calculate zoom variation according to wheel scroll.
     var zoomVariation = event.deltaY<0?1.1:1/1.1;
     setCameraZoom(cameraZoom*zoomVariation);
-    setCameraPos(Vec3.mulVector3(cameraPos, 1/zoomVariation));
   });
 }
 

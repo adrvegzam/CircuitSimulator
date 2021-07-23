@@ -3,7 +3,7 @@ import { appScreen, cameraPos, cameraZoom } from "../../Main.js";
 import { wireParams } from "../parameters/wireParams.js";
 
 import { Vector3, Vec3 } from "../../utils/Vector3.js";
-import { binaryFixedSize, getBitsFromBinary } from "../../utils/Utiles.js";
+import { binaryFixedSize, getBitsFromBinary, spaceToPosition } from "../../utils/Utiles.js";
 
 ////OBJECT DECLARATION.
 /*This object is used as an abstraction of a wire or a net of wire, allowing
@@ -41,19 +41,16 @@ function Wire(positions, width){
 
       //Set first vertex.
       context.beginPath();
-      var positionVertex = new Vector3((this.positions[e][0].x - cameraPos.x*window.devicePixelRatio) * cameraZoom + appScreen.offsetWidth/2,
-                                       (this.positions[e][0].y - cameraPos.y*window.devicePixelRatio) * cameraZoom + appScreen.offsetHeight/2, 0);
-      context.moveTo(positionVertex.x, positionVertex.y);
+      var positionVertex = spaceToPosition(this.positions[e][0]);
+      context.moveTo(positionVertex.x,
+                     positionVertex.y);
 
       //Continue with inner segments of every piece.
       for(var i = 1; i < this.positions[e].length - 1; i++){
         //Apply a little bevel around the vertices.
-        positionVertex = new Vector3((this.positions[e][i].x - cameraPos.x*window.devicePixelRatio) * cameraZoom + appScreen.offsetWidth/2,
-                                     (this.positions[e][i].y - cameraPos.y*window.devicePixelRatio) * cameraZoom + appScreen.offsetHeight/2, 0)
-        var positionVertexplus = new Vector3((this.positions[e][i+1].x - cameraPos.x*window.devicePixelRatio) * cameraZoom + appScreen.offsetWidth/2,
-                                             (this.positions[e][i+1].y - cameraPos.y*window.devicePixelRatio) * cameraZoom + appScreen.offsetHeight/2, 0)
-        var positionVertexminus = new Vector3((this.positions[e][i-1].x - cameraPos.x*window.devicePixelRatio) * cameraZoom + appScreen.offsetWidth/2,
-                                              (this.positions[e][i-1].y - cameraPos.y*window.devicePixelRatio) * cameraZoom + appScreen.offsetHeight/2, 0)
+        positionVertex = spaceToPosition(this.positions[e][i]);
+        var positionVertexplus = spaceToPosition(this.positions[e][i+1])
+        var positionVertexminus = spaceToPosition(this.positions[e][i-1])
         var dir1 = Vec3.subVector3(positionVertex, positionVertexminus).unitVector();
         var dir2 = Vec3.subVector3(positionVertex, positionVertexplus).unitVector();
         context.lineTo(positionVertex.x - dir1.x*wireParams.wireRadius,
@@ -65,20 +62,18 @@ function Wire(positions, width){
       }
 
       //Finish with last vertex.
-      positionVertex = new Vector3((this.positions[e][this.positions[e].length - 1].x - cameraPos.x*window.devicePixelRatio) * cameraZoom + appScreen.offsetWidth/2,
-                                   (this.positions[e][this.positions[e].length - 1].y - cameraPos.y*window.devicePixelRatio) * cameraZoom + appScreen.offsetHeight/2, 0);
+      positionVertex = spaceToPosition(this.positions[e][this.positions[e].length - 1]);
       context.lineTo(positionVertex.x, positionVertex.y);
       context.stroke();
 
       if(this.width > 1 && this.positions[e].length > 1){
         //Show the width line of the wire.
-        context.lineWidth = 1
         var segmentToDrawWidth = Math.round(this.positions[e].length/2);
         var intersectPoint = Vec3.mulVector3(Vec3.addVector3(this.positions[e][segmentToDrawWidth], this.positions[e][segmentToDrawWidth - 1]), 0.5);
         var despHorizontal = this.positions[e][segmentToDrawWidth].x == this.positions[e][segmentToDrawWidth - 1].x ? 10:0;
         var despVertical = this.positions[e][segmentToDrawWidth].y == this.positions[e][segmentToDrawWidth - 1].y ? -10:0;
-        positionVertex = new Vector3((intersectPoint.x - cameraPos.x*window.devicePixelRatio) * cameraZoom + appScreen.offsetWidth/2,
-                                     (intersectPoint.y - cameraPos.y*window.devicePixelRatio) * cameraZoom + appScreen.offsetHeight/2, 0)
+        positionVertex = spaceToPosition(intersectPoint);
+        
         context.beginPath();
         context.moveTo(positionVertex.x - 2*cameraZoom, positionVertex.y - 2*cameraZoom);
         context.lineTo(positionVertex.x + 2*cameraZoom, positionVertex.y + 2*cameraZoom);

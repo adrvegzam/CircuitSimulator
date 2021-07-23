@@ -11,7 +11,7 @@ const inputParams = {
   inputCaseBorderColor: "#2e8ec5",         //Saves the border color of the input case.
   inputCaseColor: "#23242c",               //Saves the color of the input case.
   inputTagColor: "#2e8ec5",                //Saves the color of the input tag.
-  inputTextFont: function(size){return 'bold ' + size*cameraZoom + 'px monospace';},    //Saves the font type of the text in the input tag.
+  inputTextFont: function(size){return 'bold ' + size*cameraZoom*window.devicePixelRatio + 'px monospace';},    //Saves the font type of the text in the input tag.
   inputRadius: 5,                          //Saves the radius of the input case.
   inputBorderResolution: 3                 //Saves the resolution of the border of the input case.
 }

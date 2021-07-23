@@ -195,6 +195,13 @@ function Chip(position, inputs, outputs, name, width){
       this.draw = chipDrawing.drawGenericChip; 
       this.construct = chipStructure.constructGate; 
       break;
+    //Adapts the internal methods to the ENC chip.
+    case "ENC": 
+      inputs = 2**outputs; outputs = outputs; 
+      this.update = eval("chipLogic." + name); 
+      this.draw = chipDrawing.drawGenericChip; 
+      this.construct = chipStructure.constructGate; 
+      break;
     //Adapts the internal methods to the MUX chip.
     case "MUX": 
       inputs = inputs + 2**inputs; outputs = 1; 
@@ -236,6 +243,20 @@ function Chip(position, inputs, outputs, name, width){
       this.update = eval("chipLogic." + name); 
       this.draw = chipDrawing.drawGenericChip; 
       this.construct = chipStructure.constructSRLATCH; 
+      break;
+    //Adapts the internal methods to the TLATCH chip.
+    case "TLATCH": 
+      inputs = 2; outputs = 2; 
+      this.update = eval("chipLogic." + name); 
+      this.draw = chipDrawing.drawGenericChip; 
+      this.construct = chipStructure.constructTLATCH; 
+      break;
+    //Adapts the internal methods to the JKLATCH chip.
+    case "JKLATCH": 
+      inputs = 3; outputs = 2; 
+      this.update = eval("chipLogic." + name); 
+      this.draw = chipDrawing.drawGenericChip; 
+      this.construct = chipStructure.constructJKLATCH; 
       break;
     //Adapts the internal methods to the SPLITTER chip.
     case "SPLITTER": 

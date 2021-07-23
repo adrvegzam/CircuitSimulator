@@ -11,7 +11,7 @@ const outputParams = {
   outputCaseBorderColor: "#2e8ec5",         //Saves the border color of the output case.
   outputCaseColor: "#23242c",               //Saves the color of the output case.
   outputTagColor: "#2e8ec5",                //Saves the color of the output tag.
-  outputTextFont: function(size){return 'bold ' + size*cameraZoom + 'px monospace';},    //Saves the font type of the text in the output tag.
+  outputTextFont: function(size){return 'bold ' + size*cameraZoom*window.devicePixelRatio + 'px monospace';},    //Saves the font type of the text in the output tag.
   outputRadius: 5,                          //Saves the radius of the output case.
   outputBorderResolution: 3                 //Saves the resolution of the border of the output case.
 }

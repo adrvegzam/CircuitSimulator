@@ -2,7 +2,7 @@ import { Wire } from "./Wire.js";
 
 import { pinParams } from "../parameters/pinParams.js";
 
-import { binaryFixedSize, getBitsFromBinary, stringFromBinary } from "../../utils/Utiles.js";
+import { binaryFixedSize, getBitsFromBinary, spaceToPosition, stringFromBinary } from "../../utils/Utiles.js";
 import { appScreen, cameraPos, cameraZoom } from "../../Main.js";
 import { Vec3, Vector3 } from "../../utils/Vector3.js";
 
@@ -41,10 +41,11 @@ function Pin(position, width, options, tag, tagPosition, type){
   this.draw = function(context, origin){
     //Change color of the pin depending on its state.
     var absolutePosition = Vec3.addVector3(this.position, origin);
-    var gradient = context.createRadialGradient((absolutePosition.x - cameraPos.x*window.devicePixelRatio) * cameraZoom + appScreen.offsetWidth/2, 
-                                                (absolutePosition.y - cameraPos.y*window.devicePixelRatio) * cameraZoom + appScreen.offsetHeight/2, 1*cameraZoom,
-                                                (absolutePosition.x - cameraPos.x*window.devicePixelRatio) * cameraZoom + appScreen.offsetWidth/2, 
-                                                (absolutePosition.y - cameraPos.y*window.devicePixelRatio) * cameraZoom + appScreen.offsetHeight/2, 5*cameraZoom);
+    var positionParsed = spaceToPosition(absolutePosition);
+    var gradient = context.createRadialGradient(positionParsed.x, 
+                                                positionParsed.y, 1*cameraZoom,
+                                                positionParsed.x, 
+                                                positionParsed.y, 5*cameraZoom);
     gradient.addColorStop(0, pinParams.pinActiveColor);
     gradient.addColorStop(1, pinParams.pinNonActiveColor);
     if(this.connection.value){context.fillStyle = gradient; context.strokeStyle = pinParams.pinActiveBorderColor;}
@@ -52,8 +53,8 @@ function Pin(position, width, options, tag, tagPosition, type){
 
     //Draw the pin as a circle with border.
     context.beginPath();
-    context.arc((absolutePosition.x - cameraPos.x*window.devicePixelRatio) * cameraZoom + appScreen.offsetWidth/2,
-                (absolutePosition.y - cameraPos.y*window.devicePixelRatio) * cameraZoom + appScreen.offsetHeight/2,
+    context.arc(positionParsed.x,
+                positionParsed.y,
                 pinParams.pinRadius * cameraZoom, 0, Math.PI*2);
     context.fill();
     context.stroke();
@@ -61,11 +62,13 @@ function Pin(position, width, options, tag, tagPosition, type){
     if(this.tag != undefined && this.tagPosition != undefined){
       //Draw the pin tag.
       var newTag = this.tag + "["+this.width+":0]";
+      var tagPositionParsed = spaceToPosition(new Vector3(this.tagPosition.x + absolutePosition.x - newTag.length*2.75/2,
+                                                          this.tagPosition.y + absolutePosition.y + 2));
       context.fillStyle = pinParams.pinTagColor;
       context.font = pinParams.pinTextFont(5);
       context.fillText(newTag,
-                       (this.tagPosition.x + absolutePosition.x - cameraPos.x*window.devicePixelRatio) * cameraZoom - cameraZoom*newTag.length*2.75/2 + appScreen.offsetWidth/2,
-                       (this.tagPosition.y + absolutePosition.y - cameraPos.y*window.devicePixelRatio + 2) * cameraZoom + appScreen.offsetHeight/2);
+                       tagPositionParsed.x,
+                       tagPositionParsed.y);
     }
   }
 

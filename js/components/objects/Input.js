@@ -3,7 +3,7 @@ import { Pin } from "./Pin.js";
 import { inputParams } from "../parameters/inputParams.js";
 
 import { Vector3, Vec3 } from "../../utils/Vector3.js";
-import { smoothContour, binaryFixedSize, binaryFromString, stringFromBinary, getBitsFromBinary } from "../../utils/Utiles.js";
+import { smoothContour, binaryFixedSize, binaryFromString, stringFromBinary, getBitsFromBinary, spaceToPosition } from "../../utils/Utiles.js";
 import { appScreen, cameraPos, cameraZoom } from "../../Main.js";
 
 ////OBJECT DECLARATION.
@@ -47,12 +47,14 @@ function Input(position, width, tag){
     context.fillStyle = inputParams.inputCaseColor;
     context.strokeStyle = inputParams.inputCaseBorderColor;
     context.beginPath();
-    context.moveTo((this.contour[0].x - cameraPos.x*window.devicePixelRatio) * cameraZoom + appScreen.offsetWidth/2,
-                   (this.contour[0].y - cameraPos.y*window.devicePixelRatio) * cameraZoom + appScreen.offsetHeight/2);
+    var positionParsed = spaceToPosition(this.contour[0]);
+    context.moveTo(positionParsed.x,
+                   positionParsed.y);
 
     for(var i = 1; i < this.contour.length; i++){
-      context.lineTo((this.contour[i].x - cameraPos.x*window.devicePixelRatio) * cameraZoom + appScreen.offsetWidth/2,
-                     (this.contour[i].y - cameraPos.y*window.devicePixelRatio) * cameraZoom + appScreen.offsetHeight/2);
+      positionParsed = spaceToPosition(this.contour[i]);
+      context.lineTo(positionParsed.x,
+                     positionParsed.y);
     }
 
     context.fill();
@@ -65,19 +67,26 @@ function Input(position, width, tag){
       if(bitValue){context.fillStyle = inputParams.inputActiveColor;}
       else{context.fillStyle = inputParams.inputNonActiveColor;}
 
-      context.fillRect((this.position.x - cameraPos.x*window.devicePixelRatio) * cameraZoom + appScreen.offsetWidth/2 -(10*i + 4)*cameraZoom,
-                       (this.position.y - cameraPos.y*window.devicePixelRatio) * cameraZoom + appScreen.offsetHeight/2 - 4*cameraZoom, 8*cameraZoom, 8*cameraZoom);
+      positionParsed = spaceToPosition(new Vector3(this.position.x - (10*i + 4), this.position.y - 4))
+      context.fillRect(positionParsed.x,
+                       positionParsed.y, 
+                       8*cameraZoom*window.devicePixelRatio, 
+                       8*cameraZoom*window.devicePixelRatio);
 
-      context.strokeRect((this.position.x - cameraPos.x*window.devicePixelRatio) * cameraZoom + appScreen.offsetWidth/2 - (10*i + 4)*cameraZoom,
-                         (this.position.y - cameraPos.y*window.devicePixelRatio) * cameraZoom + appScreen.offsetHeight/2 - 4*cameraZoom, 8*cameraZoom, 8*cameraZoom);
+      context.strokeRect(positionParsed.x,
+                         positionParsed.y, 
+                         8*cameraZoom*window.devicePixelRatio, 
+                         8*cameraZoom*window.devicePixelRatio);
     }
 
     //Draw the input tag.
     context.fillStyle = inputParams.inputTagColor;
     context.font = inputParams.inputTextFont(10);
+    var tagPositionParsed = spaceToPosition(new Vector3(this.position.x - this.tag.length*5.5 - 10*this.width - 20,
+                                                        this.position.y + 3));
     context.fillText(this.tag,
-                    (this.position.x - cameraPos.x*window.devicePixelRatio) * cameraZoom + appScreen.offsetWidth/2 - (this.tag.length*5.5 + 10*this.width + 20)*cameraZoom,
-                    (this.position.y - cameraPos.y*window.devicePixelRatio) * cameraZoom + appScreen.offsetHeight/2 + 3*cameraZoom);
+                    tagPositionParsed.x,
+                    tagPositionParsed.y);
 
     //Draw output pin.
     this.output.draw(context, this.position);

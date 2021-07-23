@@ -1,5 +1,6 @@
 import { appScreen, cameraPos, cameraZoom } from "../Main.js";
-import { Vec3 } from "../utils/Vector3.js";
+import { positionToSpace, spaceToPosition } from "../utils/Utiles.js";
+import { Vec3, Vector3 } from "../utils/Vector3.js";
 import { chipParams } from "./parameters/chipParams.js";
 
 ////EXTERNAL DRAWING METHODS
@@ -12,12 +13,14 @@ const chipDrawing = {
     context.fillStyle = chipParams.chipCaseColor;
     context.strokeStyle = chipParams.chipCaseBorderColor;
     context.beginPath();
-    context.moveTo((this.contour[0].x - cameraPos.x*window.devicePixelRatio) * cameraZoom + appScreen.offsetWidth/2,
-                   (this.contour[0].y - cameraPos.y*window.devicePixelRatio) * cameraZoom + appScreen.offsetHeight/2);
+    var positionParsed = spaceToPosition(this.contour[0]);
+    context.moveTo(positionParsed.x,
+                   positionParsed.y);
   
     for(var i = this.contour.length - 1; i >= 0; i--){
-      context.lineTo((this.contour[i].x - cameraPos.x*window.devicePixelRatio) * cameraZoom + appScreen.offsetWidth/2,
-                     (this.contour[i].y - cameraPos.y*window.devicePixelRatio) * cameraZoom + appScreen.offsetHeight/2);
+      positionParsed = spaceToPosition(this.contour[i]);
+      context.lineTo(positionParsed.x,
+                     positionParsed.y);
     }
   
     context.fill();
@@ -36,9 +39,11 @@ const chipDrawing = {
     //Draw name of chip.
     context.fillStyle = chipParams.chipTextColor;
     context.font = chipParams.chipTextFont(10);
+    var positionParsed = spaceToPosition(new Vector3(this.position.x - this.name.length*5.5/2,
+                                                     this.position.y + 3.5));
     context.fillText(this.name,
-                    (this.position.x - cameraPos.x*window.devicePixelRatio) * cameraZoom - cameraZoom*this.name.length*5.5/2 + appScreen.offsetWidth/2,
-                    (this.position.y - cameraPos.y*window.devicePixelRatio) * cameraZoom + 3.5*cameraZoom + appScreen.offsetHeight/2);
+                    positionParsed.x,
+                    positionParsed.y);
   },
 
   //Drawing method for a chip used in SPLITTER and JOINER.
@@ -63,12 +68,14 @@ const chipDrawing = {
 
       context.lineWidth = cameraZoom/2;
       context.beginPath();
-      context.moveTo((this.lines[e][0].x - cameraPos.x*window.devicePixelRatio) * cameraZoom + appScreen.offsetWidth/2,
-                     (this.lines[e][0].y - cameraPos.y*window.devicePixelRatio) * cameraZoom + appScreen.offsetHeight/2);
+      var positionParsed = spaceToPosition(this.lines[e][0]);
+      context.moveTo(positionParsed.x,
+                     positionParsed.y);
     
       for(var i = 1; i < this.lines[e].length; i++){
-        context.lineTo((this.lines[e][i].x - cameraPos.x*window.devicePixelRatio) * cameraZoom + appScreen.offsetWidth/2,
-                       (this.lines[e][i].y - cameraPos.y*window.devicePixelRatio) * cameraZoom + appScreen.offsetHeight/2);
+        positionParsed = spaceToPosition(this.lines[e][i]);
+        context.lineTo(positionParsed.x,
+                       positionParsed.y);
       }
       context.stroke();
     }

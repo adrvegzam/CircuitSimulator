@@ -27,7 +27,7 @@ var manager = new Manager(circuit);
 
 //Define a camera position in order to be able to move all the circuit at once.
 var cameraPos = new Vector3(0, 0, 0);
-var cameraZoom = 2;
+var cameraZoom = 1;
 
 Init();
 //Initialization method.

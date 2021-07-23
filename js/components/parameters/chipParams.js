@@ -10,7 +10,7 @@ const chipParams = {
   chipTextColor: "#2e8ec5",              //Saves the color of the text in the chip case.
   chipWireNonActiveColor: "#605e68",     //Saves the color of the non active chip wire.
   chipWireActiveColor: "#2e8ec5",        //Saves the color of the active chip wire.
-  chipTextFont: function(size){return 'bold ' + size*cameraZoom + 'px monospace';}         //Saves the font type of the text in the chip case.
+  chipTextFont: function(size){return 'bold ' + size*cameraZoom*window.devicePixelRatio + 'px monospace';}         //Saves the font type of the text in the chip case.
 }
 
 export {chipParams};

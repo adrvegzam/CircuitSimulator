@@ -292,7 +292,42 @@ const chipStructure = {
     this.outputs[0].tag = "~Q";
     this.outputs[1].tag = "Q";
     
-  }
+  },
+
+  //Constructor method for a gate used in TLATCH.
+  /*This method constructs a TLATCH*/ 
+  constructTLATCH: function(inputs, outputs){
+
+    //Add properties.
+    this.q = 0;
+    //Procedurally generating the whole chip.
+    chipAuxStructure.generateGenericChip(this, inputs, outputs);
+    //Rename inputs.
+    this.inputs[0].tag = "Clk";
+    this.inputs[1].tag = "T";
+    //Rename outputs.
+    this.outputs[0].tag = "~Q";
+    this.outputs[1].tag = "Q";
+    
+  },
+
+  //Constructor method for a gate used in JKLATCH.
+  /*This method constructs a JKLATCH*/ 
+  constructJKLATCH: function(inputs, outputs){
+
+    //Add properties.
+    this.q = 0;
+    //Procedurally generating the whole chip.
+    chipAuxStructure.generateGenericChip(this, inputs, outputs);
+    //Rename inputs.
+    this.inputs[0].tag = "Clk";
+    this.inputs[1].tag = "K";
+    this.inputs[2].tag = "J";
+    //Rename outputs.
+    this.outputs[0].tag = "~Q";
+    this.outputs[1].tag = "Q";
+    
+  },
  
 }
 

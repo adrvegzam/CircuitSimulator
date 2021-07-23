@@ -1,5 +1,5 @@
 import { appScreen, cameraPos, cameraZoom, circuit } from "../Main.js";
-import { gridFixed } from "./Utiles.js";
+import { gridFixed, positionToSpace } from "./Utiles.js";
 import { Vec3, Vector3 } from "./Vector3.js";
 
 ////EXTERNAL VARIABLES
@@ -28,12 +28,10 @@ function EventHandler(){
   //Add the mousemove main event in charge of managing the rest of mousemove events.
   circuit.canvasElement.addEventListener("mousemove", function(event){
     //get the mouse position and save needed variables for draging calculations.
-    mousePos = new Vector3((event.pageX - appScreen.offsetLeft - appScreen.offsetWidth/2) / cameraZoom + cameraPos.x,
-                           (event.pageY - appScreen.offsetTop - appScreen.offsetHeight/2) / cameraZoom + cameraPos.y, 0);
-    mousePos.mul(window.devicePixelRatio);
-    mousePos.add(new Vector3(appScreen.offsetWidth/(4*cameraZoom), appScreen.offsetHeight/(4*cameraZoom), 0));
+    mousePos = new Vector3((event.pageX - appScreen.offsetLeft),
+                           (event.pageY - appScreen.offsetTop), 0);
     startClickPos = endClickPos;
-    endClickPos = Vec3.subVector3(mousePos, cameraPos);
+    endClickPos = mousePos;
     //Execute all the related events.
     for(var i = 0; i < selfEventHandler.mousemoveEvents.length; i++){
       selfEventHandler.mousemoveEvents[i](event);
@@ -43,11 +41,9 @@ function EventHandler(){
   //Add the mousedown main event in charge of managing the rest of mousedown events.
   circuit.canvasElement.addEventListener("mousedown", function(event){
     //Get the click position and prepare for draging.
-    clickPos = new Vector3((event.pageX - appScreen.offsetLeft - appScreen.offsetWidth/2) / cameraZoom + cameraPos.x,
-                           (event.pageY - appScreen.offsetTop - appScreen.offsetHeight/2) / cameraZoom + cameraPos.y, 0);
-    clickPos.mul(window.devicePixelRatio);
-    clickPos.add(new Vector3(appScreen.offsetWidth/(4*cameraZoom), appScreen.offsetHeight/(4*cameraZoom), 0));
-    startClickPos = Vec3.subVector3(mousePos, cameraPos);
+    clickPos = new Vector3((event.pageX - appScreen.offsetLeft),
+                           (event.pageY - appScreen.offsetTop), 0);
+    startClickPos = mousePos;
     mousePressed = true;
     //Execute all the related events.
     for(var i = 0; i < selfEventHandler.mousedownEvents.length; i++){
